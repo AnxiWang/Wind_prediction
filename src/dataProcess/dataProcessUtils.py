@@ -1,9 +1,10 @@
-from netCDF4 import Dataset
+import netCDF4 as nc
 import numpy as np
 import pandas as pd
 import tqdm
 import os
 import datetime as dt
+import glob
 
 ymdh = "%Y%m%d%H"
 
@@ -36,10 +37,12 @@ def get_gts_time(gts_dir):
 
 
 def get_wrf_time(wrf_dir):
-    # dirs = os.listdir(wrf_dir)
-    # for name in dirs:
-    #     print(name.split('.')[-2].split('_')[0])
-    dirs = [name.split('.')[-2].split('_')[0] for name in os.listdir(wrf_dir)]
+    fileNames = os.listdir(wrf_dir)
+    dirs = []
+    for name in fileNames:
+        if len(name) > 35:
+            dirs.append(name.split('.')[-2].split('_')[0])
+    # dirs = [name.split('.')[-2].split('_')[0] for name in os.listdir(wrf_dir)]
     return pd.to_datetime(dirs, format=ymdh)
 
 
@@ -76,31 +79,54 @@ def remove_abnormal(gts):
     return gts
 
 
-def dump_wrf_var(wrf_dir, spot, pred, var):
+def dump_wrf_var(wrf_dir, spot, pred):
     spot_str = spot.strftime(ymdh)
     pred_str = pred.strftime(ymdh)
-    print(spot_str + ' ' + pred_str)
-    files = ['{0}/pack.pwrfout_d01.{1}_{2}.nc'.format(wrf_dir, x, y)
-             for x, y in zip(spot_str, pred_str)]
     res = []
+    for i in range(0, len(spot_str)):
+        ncName = 'pack.pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
+        # file = sorted(glob.glob(wrf_dir + '*pwrfout_d01.' + spot_str[i] + '*.nc'))
+        file = wrf_dir + ncName
+        print(file)
 
-    for s, p, f in tqdm(zip(spot, pred, files)):
-        print(s + ' ' + p + ' ' + f)
-        # if not os.path.exists(f):
-        #     print("Warning: {0} does not exists.".format(f))
-        #     continue
-        # try:
-        #     with Dataset(f) as ds:
-        #         res.append([s, p, ds[var][:].data])
-        # except:
-        #     print("Warning: error in reading {0} from {1}.".format(var, f))
-        #     continue
+        with nc.Dataset(file, mode='r', format='NETCDF4_CLASSIC') as ds:
+            # print(len(ds['U10'][:].data[0]))    # 299
+            # print(len(ds['V10'][:].data))       # 133
+            # print([spot_str[i], pred_str[i], ds['U10'][:].data, ds['V10'][:].data])
+            res.append([spot_str[i], pred_str[i], ds['U10'][:].data, ds['V10'][:].data])
+
     return res
+
+    #     filelist.extend(file)
+    # print(filelist)
+    # 三种命名方式的文件，需要分别加入读取列表
+    # filelist = []
+    # filelist.extend(sorted(glob.glob(wrf_dir + '6h.pack.pwrfout_d01.' + str(yy) + '*.nc')))
+    # filelist.extend(sorted(glob.glob(wrf_dir + 'pack.pwrfout_d01.' + str(yy) + '*.nc')))
+    # filelist.extend(sorted(glob.glob(wrf_dir + 'pwrfout_d01.' + str(yy) + '*.nc')))
+    # nt = len(filelist)
+    # files = [wrf_dir + '/' + r'\.' + 'pwrfout_d01.{0}_{1}.nc'.format(x, y)
+    #          for x, y in zip(spot_str, pred_str)]
+    # print(files)
+    # res = []
+
+    # for s, p, f in tqdm(zip(spot, pred, files)):
+    #     print(s + ' ' + p + ' ' + f)
+    #     if not os.path.exists(f):
+    #         print("Warning: {0} does not exists.".format(f))
+    #         continue
+    #     try:
+    #         with Dataset(f) as ds:
+    #             res.append([s, p, ds[var][:].data])
+    #     except:
+    #         print("Warning: error in reading {0} from {1}.".format(var, f))
+    #         continue
+    # return res
 
 
 # build mesh (stored in DataFrame) for EC data：为EC数据建立网格
 def build_mesh():
-    ds = Dataset('../../data/wrfout/pwrfout_d01.2019010100_2019010812.nc')
+    ds = nc.Dataset('../../data/wrfout/pwrfout_d01.2019010100_2019010812.nc')
     lon = ds['XLONG'][:].data
     lat = ds['XLAT'][:].data
     nlon = len(lon[0][0])
