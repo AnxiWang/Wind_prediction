@@ -9,7 +9,7 @@ m = Basemap()
 m.drawcoastlines()  # 画海岸线
 m.drawmapboundary(fill_color='white')
 m.drawcountries(linewidth=0.5)
-# m.fillcontinents(color='white', lake_color='white')  # 画大洲，颜色填充为白色
+m.fillcontinents(color='white', lake_color='white')  # 画大洲，颜色填充为白色
 
 parallels = np.arange(-90., 90., 10.)  # 这两行画纬度，范围为[-90,90]间隔为10
 m.drawparallels(parallels, labels=[False, True, True, False])
