@@ -5,9 +5,9 @@ import re
 import pandas as pd
 
 GTSPath = '/home/shared_data/Wind_WRF/Data1/GTS_OUT'
-stationPath = '/home/wanganxi/DataProcess/data'
+stationPath = '/home/wanganxi/Wind/data/station'
 stationPathLocal = '../../data/station'
-storePath = '/home/wanganxi/DataProcess/data/'
+storePath = '/home/wanganxi/Wind/data/GTS/'
 
 
 def readGTS(dataSetPath):
@@ -46,7 +46,7 @@ def getStationInfo(targetFilePath, outFileName):
 
 def reduceDupStation(csvPath):
     reducedStationDf = pd.DataFrame(columns=['stationID', 'LONG', 'LAT'])
-    outFilePath = csvPath + '/station_reduced.csv'
+    outFilePath = stationPath + '/station_reduced.csv'
     stationFiles = os.listdir(csvPath)
     for eachFile in stationFiles:
         eachFilePath = csvPath + '/' + eachFile
@@ -55,6 +55,7 @@ def reduceDupStation(csvPath):
         reducedStationDf = reducedStationDf.append(data, ignore_index=True)
     reducedStationDf = reducedStationDf.drop_duplicates()
     reducedStationDf.to_csv(outFilePath, index=False, encoding='windows-1252')
+
 
 def getIndianStationInfo(csvPath):
     stationInfoPath = csvPath + '/station_reduced.csv'
@@ -76,8 +77,8 @@ if __name__ == "__main__":
     from multiprocessing import Pool
 
     # with Pool(20) as p:
-    #     for i in range(2013, year + 1, 1):
-    #         dataSetPath = GTSPath + '/' + str(i)
-    #         readGTS(dataSetPath)
-    # reduceDupStation(stationPathLocal)
-    getIndianStationInfo(stationPathLocal)
+    for i in range(2013, 2014, 1):
+        dataSetPath = GTSPath + '/' + str(i)
+        readGTS(dataSetPath)
+    reduceDupStation(storePath)
+    getIndianStationInfo(stationPath)

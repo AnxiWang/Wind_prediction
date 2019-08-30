@@ -1,12 +1,25 @@
+import time
+
 import netCDF4 as nc
 import numpy as np
 import pandas as pd
 import tqdm
 import os
 import datetime as dt
+import math
 import glob
 
 ymdh = "%Y%m%d%H"
+u10_col = []
+v10_col = []
+for col_i in range(0, 21, 1):
+    u10_col.append(str(col_i * 6) + 'h_u10')
+    v10_col.append(str(col_i * 6) + 'h_v10')
+u10_col_1h = []
+v10_col_1h = []
+for col_i in range(0, 133, 1):
+    u10_col_1h.append(str(col_i) + 'h_u10')
+    v10_col_1h.append(str(col_i) + 'h_v10')
 
 
 def ymd(str):
@@ -21,12 +34,20 @@ def hours(h):
     return dt.timedelta(hours=h)
 
 
+def ym(x):
+    return pd.to_datetime(x, format="%Y%m")
+
+
 def ymd_h(x):
     return pd.to_datetime(x, format="%Y%m%d%H")
 
 
 def as_str(x):
     return x.strftime("%Y%m%d")
+
+
+def as_str_h(x):
+    return x.strftime("%Y%m%d%H")
 
 
 def get_gts_time(gts_dir):
@@ -46,6 +67,15 @@ def get_wrf_time(wrf_dir):
     return pd.to_datetime(dirs, format=ymdh)
 
 
+def is_valid_date(str):
+  '''判断是否是一个有效的日期字符串'''
+  try:
+    ymd_h(str)
+    return True
+  except:
+    return False
+
+
 def load_gts(gts_dir, gts_times):
     gts_files = ["{0}/GTS.out_{1}_wind.csv".format(gts_dir, as_str(x)) for x in gts_times]
     res = [pd.read_csv(f, index_col=0) for f in gts_files]
@@ -57,7 +87,13 @@ def load_gts(gts_dir, gts_times):
         if total[c].dtype.name == 'int64':
             total[c] = total[c].astype('int32')
     total.reset_index(inplace=True)
-    total['Time'] = ymd_h(total['Time'])
+    # 上个月最后一天的数据会被认为是这个月最后一天的数据，同时如果大小月会出现日期不合法的问题。。。。。
+    # for date in total['Time']:
+    #     if is_valid_date(str(date)):
+    #         total['Time'] = ymd_h(total['Time'])
+    #     else:
+    #         print('False')
+
     total['stationID'] = total['stationID'].astype('str')
     return total
 
@@ -84,17 +120,25 @@ def dump_wrf_var(wrf_dir, spot, pred):
     pred_str = pred.strftime(ymdh)
     res = []
     for i in range(0, len(spot_str)):
-        ncName = 'pack.pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
-        # file = sorted(glob.glob(wrf_dir + '*pwrfout_d01.' + spot_str[i] + '*.nc'))
-        file = wrf_dir + ncName
-        print(file)
-
-        with nc.Dataset(file, mode='r', format='NETCDF4_CLASSIC') as ds:
-            # print(len(ds['U10'][:].data[0]))    # 299
-            # print(len(ds['V10'][:].data))       # 133
-            # print([spot_str[i], pred_str[i], ds['U10'][:].data, ds['V10'][:].data])
-            res.append([spot_str[i], pred_str[i], ds['U10'][:].data, ds['V10'][:].data])
-
+        if ymd_h(spot_str[i]) <= ymd_h('2013123112'):
+            ncName = 'pack.pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
+            # file = sorted(glob.glob(wrf_dir + '*pwrfout_d01.' + spot_str[i] + '*.nc'))
+            file = wrf_dir + ncName
+            print(file)
+            with nc.Dataset(file, mode='r', format='NETCDF4_CLASSIC') as ds:
+                variable_keys = ds.variables.keys()
+                # print(variable_keys)
+                if 'U10' in variable_keys and 'V10' in variable_keys and 'XLONG' in variable_keys and 'XLAT' in variable_keys:
+                    # print((ymd_h(spot_str[i]) + hours(12)).strftime(ymdh), (ymd_h(pred_str[i]) - hours(2 * 24)).strftime(ymdh))
+                    # print(len(ds['U10'][:].data[0]))    # 299
+                    # print(len(ds['V10'][:].data))       # 133
+                    # print([spot_str[i], pred_str[i], ds['U10'][:].data, ds['V10'][:].data])
+                    res.append([(ymd_h(spot_str[i]) + hours(12)).strftime(ymdh),
+                                (ymd_h(pred_str[i]) - hours(2 * 24)).strftime(ymdh),
+                                ds['XLONG'][:].data,
+                                ds['XLAT'][:].data,
+                                ds['U10'][:].data,
+                                ds['V10'][:].data])
     return res
 
     #     filelist.extend(file)
@@ -142,14 +186,50 @@ def find_nearest_point(p, grid):
     return grid.nsmallest(4, columns='dist')
 
 
-def tp_mesh_to_station(obs, tp_pred, mesh):
-    stations = obs.groupby('Station_Id').first().reset_index() \
-        [['Station_Id', 'Longitude', 'Latitude']]
-
+def wrf_mesh_to_station(station, wrf_pred, mesh):
     res = []
-    for index, row in tqdm(stations.iterrows(), total=stations.shape[0]):
-        s_lon = row['Longitude']
-        s_lat = row['Latitude']
+    ncNumber = len(wrf_pred[0])
+    # print(wrf_pred[0][0][0], wrf_pred[0][0][1], len(wrf_pred[0][0][2]), len(wrf_pred[0][0][3]), len(wrf_pred[0][0][4]),len(wrf_pred[0][0][5]))     # len(wrf_pred[0][0]) = 6 len(wrf_pred[0]) = 5
+    # print(wrf_pred[0][1][0], wrf_pred[0][1][1], len(wrf_pred[0][1][2]))
+    # print(wrf_pred[0][2][0], wrf_pred[0][2][1], len(wrf_pred[0][2][2]))
+    # print(wrf_pred[0][3][0], wrf_pred[0][3][1])
+    # print(wrf_pred[0][4][0], wrf_pred[0][4][1])
+    # # c = {"spot_time": wrf_pred[0][0][: :-1],
+    # #      "pred_time": wrf_pred[0][1][: :-1],
+    # #      "XLONG": wrf_pred[0][2]}
+    # # data = pd.DataFrame(c)  # 将字典转换成为数据框
+    # print(len(wrf_pred[0][0][0][0]))
+    # print(len(wrf_pred[0][0][1][0]))
+    # print(len(wrf_pred[0][0][2][0][0]))
+    # print(len(wrf_pred[0][0][3][0][0]))
+    # print(len(wrf_pred[0][0][4][0][0]))
+    # print(len(wrf_pred[0][0][5][0]))
+    # 2013040900
+    # 2013041400
+    # 21
+    # 21
+    # 21
+    # 21
+    # 2013040912
+    # 2013041412
+    # 21
+    # 2013041000
+    # 2013041500
+    # 21
+    # 2013041012
+    # 2013041512
+    # 2013041100
+    # 2013041600
+    # 1
+    # 1
+    # 549
+    # 549
+    # 549
+    # 299
+
+    for index in range(0, station.shape[0], 1):
+        s_lon = station.loc[index].LONG
+        s_lat = station.loc[index].LAT
         nn = find_nearest_point([s_lon, s_lat], mesh)
         # caluate the weight for each point
         # 选取距离圆形中心最近四个EC网格数据，按照距离站点的远近赋予权重，
@@ -159,21 +239,119 @@ def tp_mesh_to_station(obs, tp_pred, mesh):
         ilat = np.array(nn['ilat'], dtype=int)
         weight = np.array(nn['weight'])
 
-        t1 = np.array([x[0] for x in tp_pred])
-        t2 = np.array([x[1] for x in tp_pred])
+        for eachNc in range(0, ncNumber, 1):
+            t1 = np.array([x[eachNc][0] for x in wrf_pred])
+            t2 = np.array([x[eachNc][1] for x in wrf_pred])
+            print(t1, t2)
+            # 取出的u0，u1，u2，u3都是一个21维的数组
+            u0 = np.array([x[eachNc][4][:, ilat[0], ilon[0]] for x in wrf_pred])
+            u1 = np.array([x[eachNc][4][:, ilat[1], ilon[1]] for x in wrf_pred])
+            u2 = np.array([x[eachNc][4][:, ilat[2], ilon[2]] for x in wrf_pred])
+            u3 = np.array([x[eachNc][4][:, ilat[3], ilon[3]] for x in wrf_pred])
+            # print(u0, u1, u2, u3)
 
-        v0 = np.array([x[2][0, ilat[0], ilon[0]] for x in tp_pred])
-        v1 = np.array([x[2][0, ilat[1], ilon[1]] for x in tp_pred])
-        v2 = np.array([x[2][0, ilat[2], ilon[2]] for x in tp_pred])
-        v3 = np.array([x[2][0, ilat[3], ilon[3]] for x in tp_pred])
-        # v = v0
-        # print(max(v))
-        v = v0 * weight[0] + v1 * weight[1] + v2 * weight[2] + v3 * weight[3]
+            v0 = np.array([x[eachNc][5][:, ilat[0], ilon[0]] for x in wrf_pred])
+            v1 = np.array([x[eachNc][5][:, ilat[1], ilon[1]] for x in wrf_pred])
+            v2 = np.array([x[eachNc][5][:, ilat[2], ilon[2]] for x in wrf_pred])
+            v3 = np.array([x[eachNc][5][:, ilat[3], ilon[3]] for x in wrf_pred])
+            # print(v0, v1, v2, v3)
+            u = u0 * weight[0] + u1 * weight[1] + u2 * weight[2] + u3 * weight[3]
+            v = v0 * weight[0] + v1 * weight[1] + v2 * weight[2] + v3 * weight[3]
+            # print(u[0], v[0])
+            df = pd.DataFrame(
+                {'Station_Id': station.loc[index].stationID, 'XLONG': s_lon, 'XLAT': s_lat, 'SpotTime': t1,
+                 'PredEndTime': t2})
 
-        df = pd.DataFrame({'Station_Id': row['Station_Id'],
-                           'SpotTime': t1,
-                           'PredTime': t2,
-                           'PredTP': v * 1000})
+            if len(u[0]) == 21:
+                u10_pd = pd.DataFrame(u, columns=u10_col)
+                v10_pd = pd.DataFrame(v, columns=v10_col)
+                df = df.join(u10_pd, how='right')
+                df = df.join(v10_pd, how='right')
+                res.append(df)
+            elif len(u[0]) < 21:
+                u = u.tolist()
+                v = v.tolist()
+                u[0].extend(np.nan for _ in range(21 - len(u[0])))
+                v[0].extend(np.nan for _ in range(21 - len(v[0])))
 
-        res.append(df)
+                u10_pd = pd.DataFrame(u, columns=u10_col)
+                v10_pd = pd.DataFrame(v, columns=v10_col)
+                df = df.join(u10_pd, how='right')
+                df = df.join(v10_pd, how='right')
+                res.append(df)
+            elif 21 < len(u[0]) <= 133:
+                u = u.tolist()
+                v = v.tolist()
+                u[0].extend(np.nan for _ in range(133 - len(u[0])))
+                v[0].extend(np.nan for _ in range(133 - len(v[0])))
+
+                u10_pd_1h = pd.DataFrame(u, columns=u10_col_1h)
+                v10_pd_1h = pd.DataFrame(v, columns=v10_col_1h)
+                df = df.join(u10_pd_1h, how='right')
+                df = df.join(v10_pd_1h, how='right')
+                res.append(df)
+            else:
+                print('error!')
     return pd.concat(res).reset_index().drop(columns=['index'])
+
+
+def compute(u, v):
+    if u > 0 and v > 0:
+        fx = 270 - math.atan(v / u) * 180 / math.pi
+    elif u < 0 and v > 0:
+        fx = 90 - math.atan(v / u) * 180 / math.pi
+    elif u < 0 and v < 0:
+        fx = 90 - math.atan(v / u) * 180 / math.pi
+    elif u > 0 and v < 0:
+        fx = 270 - math.atan(v / u) * 180 / math.pi
+    elif u == 0 and v > 0:
+        fx = 180
+    elif u == 0 and v < 0:
+        fx = 0
+    elif u > 0 and v == 0:
+        fx = 270
+    elif u < 0 and v == 0:
+        fx = 90
+    elif u == 0 and v == 0:
+        fx = 999.9
+    elif pd.isnull(u) and pd.isnull(v):
+        fx = np.nan
+
+    # 风速是uv分量的平方和
+    fs = math.sqrt(math.pow(u, 2) + math.pow(v, 2))
+    return fx, fs
+
+
+def calculateSpeedFromUV(sta_wrf_pred):
+    afterDf = pd.DataFrame(columns=['Station_Id', 'XLONG', 'XLAT', 'SpotTime', 'PredTime', 'Direction', 'Speed'])
+
+    for index, row in sta_wrf_pred.iterrows():
+        if len(row) == 47:
+            for x, y in zip(u10_col, v10_col):
+                predTime = ymd_h(row['SpotTime']) + hours(int(x.split('h')[0]))
+                predTimeStr = as_str_h(predTime)
+                direction, speed = compute(row[x], row[y])
+                print(row['Station_Id'], row['XLONG'], row['XLAT'], row['SpotTime'], predTimeStr, direction, speed)
+                afterDf = afterDf.append([{'Station_Id': row.Station_Id,
+                                   'XLONG': row.XLONG,
+                                   'XLAT': row.XLAT,
+                                   'SpotTime': row.SpotTime,
+                                   'PredTime': predTimeStr,
+                                   'Direction': direction,
+                                   'Speed': speed
+                                           }], ignore_index=True)
+        elif len(row) == 271:
+            for x, y in zip(u10_col_1h, v10_col_1h):
+                predTime = ymd_h(row['SpotTime']) + hours(int(x.split('h')[0]))
+                predTimeStr = as_str_h(predTime)
+                direction, speed = compute(row[x], row[y])
+                print(row['Station_Id'], row['XLONG'], row['XLAT'], row['SpotTime'], predTimeStr, direction, speed)
+                afterDf = afterDf.append([{'Station_Id': row.Station_Id,
+                                   'XLONG': row.XLONG,
+                                   'XLAT': row.XLAT,
+                                   'SpotTime': row.SpotTime,
+                                   'PredTime': predTimeStr,
+                                   'Direction': direction,
+                                   'Speed': speed
+                                           }], ignore_index=True)
+    return afterDf
