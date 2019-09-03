@@ -5,6 +5,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.metrics import mean_squared_error
 
+from model import *
 
 import warnings
 warnings.filterwarnings(action='ignore')
@@ -63,7 +64,9 @@ def station_train(data):
 
 
 if __name__ == '__main__':
-    station_train(dataset)
+    # station_train(dataset)
+    lstm(5, 3)
+    print(np.__version__)
 
 
 

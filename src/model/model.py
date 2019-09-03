@@ -7,7 +7,7 @@ from keras.layers import LSTM, Input, Add, Dense, Dropout, Activation, \
 from keras.models import Model, load_model
 import lightgbm as lgb
 from sklearn.model_selection import train_test_split
-from keras import backend as K
+from keras import backend as K, Sequential
 
 
 def lgb_model(X, y, model_name, scaler_Y):
@@ -85,4 +85,25 @@ def ann(X_in):
     # X = Dropout(0.2)(X)
     X = Dense(1)(X)
     model = Model(inputs=X_input, outputs=X)
+    return model
+
+
+def lstm(lstm_layers, dense_layers):
+    model = Sequential()
+
+    model.add(LSTM(output_dim=32,
+                   input_shape=(2, 3),
+                   activation='relu',
+                   return_sequences=True))
+    for i in range(lstm_layers - 1):
+        model.add(LSTM(output_dim=32 * (i + 1),
+                       activation='relu',
+                       return_sequences=True))
+
+    for i in range(dense_layers - 1):
+        model.add(Dense(output_dim=256,
+                        activation='relu'))
+        model.add(Dropout(0.5))
+    model.compile(loss='mae', optimizer='adam', metrics=['accuracy'])
+    model.summary()
     return model
