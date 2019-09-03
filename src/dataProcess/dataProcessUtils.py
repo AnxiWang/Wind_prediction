@@ -78,7 +78,7 @@ def is_valid_date(str):
 
 def load_gts(gts_dir, gts_times):
     gts_files = ["{0}/GTS.out_{1}_wind.csv".format(gts_dir, as_str(x)) for x in gts_times]
-    res = [pd.read_csv(f, index_col=0) for f in gts_files]
+    res = [pd.read_csv(f, index_col=0, encoding='windows-1252') for f in gts_files]
     total = pd.concat(res)
     # convert all float64 type to float32
     for c in total.columns:
@@ -87,12 +87,7 @@ def load_gts(gts_dir, gts_times):
         if total[c].dtype.name == 'int64':
             total[c] = total[c].astype('int32')
     total.reset_index(inplace=True)
-    # 上个月最后一天的数据会被认为是这个月最后一天的数据，同时如果大小月会出现日期不合法的问题。。。。。
-    # for date in total['Time']:
-    #     if is_valid_date(str(date)):
-    #         total['Time'] = ymd_h(total['Time'])
-    #     else:
-    #         print('False')
+    # total['Time'] = ymd_h(total['Time'])
 
     total['stationID'] = total['stationID'].astype('str')
     return total
