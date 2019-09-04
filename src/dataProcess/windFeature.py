@@ -6,8 +6,8 @@ import pandas as pd
 from dataProcessUtils import *
 from dateutil.relativedelta import relativedelta
 
-GTSPath = '../../data/GTS/2015'
-# GTSPath = '/home/shared_data/Wind_WRF/Data1/GTS_OUT'
+# GTSPath = '../../data/GTS/2015'
+GTSPath = '/home/shared_data/Wind_WRF/Data1/GTS_OUT'
 # stationPath = '/home/wanganxi/DataProcess/data'
 # stationPathLocal = '../../data/station'
 storePath = '../../data/wind/'
@@ -33,66 +33,111 @@ def readGTS(dataSetPath, year):
                     targetFilePath = eachYearPath + '/' + target
                     outFileName = outFilePath + '/' + target + '_wind.csv'
                     print(targetFilePath)
-                    getWindInfo(targetFilePath, outFileName)
+                    getWindInfo(targetFilePath, outFileName, year)
 
 
 # 针对每一个GTS文件提取站点风向和风速信息
-def getWindInfo(targetFilePath, outFileName):
-    stationDf = pd.DataFrame(
-        columns=['stationID', 'LONG', 'LAT', 'Date', 'Hour', 'Direction', 'Speed', 'SeaPressure', 'StaPressure', 'P3',
-                 'Temp', 'DPT', 'Time'])
+def getWindInfo(targetFilePath, outFileName, year):
+    if int(year) < 2018:
+        stationDf = pd.DataFrame(
+            columns=['stationID', 'LONG', 'LAT', 'Date', 'Hour', 'Direction', 'Speed', 'SeaPressure', 'StaPressure', 'P3',
+                     'Temp', 'DPT', 'Time'])
 
-    with open(targetFilePath, encoding='windows-1252') as f:
-        for line in f.readlines():
-            try:
-                # print(line)
-                line = ' '.join(line.split())  # change multiple space to one
-                # 先删除行首空格，再把减号与前一个数据连接的断开，再以空格分割
-                line = line.lstrip().replace(' -', '-').replace('-', ' -').replace('-888888', 'NaN').split(' ')
-                stationId = line[0]
-                stationLong = line[1]
-                stationLat = line[2]
-                date = line[3]
-                hour = line[4]
-                if int(date) < 10:
-                    date = '0' + date
-                if int(hour) < 10:
-                    hour = '0' + hour
-                windDirection = line[8]
-                windSpeed = line[9]
-                seaPressure = line[10]
-                staPressure = line[11]
-                p3 = line[12]
-                temp = line[13]
-                dpt = line[15]
-                # 这里判断每个月第一天中包含上个月最后一天数据
-                # 如果文件中读出的日期和文件名中的日期差值大于1，则将月份数据减一
-                if int(date) - int(targetFilePath.split('_')[-1][6:8]) > 2:
-                    obsTime = targetFilePath.split('_')[-1][0:6]
-                    obsTime = as_str_h(ym(obsTime) - relativedelta(months=1))
-                    obsTime = obsTime[0:6] + date + hour
-                else:
-                    obsTime = targetFilePath.split('_')[-1][0:6] + date + hour
-                # print(stationId in indianStationDf['stationID'].values.astype(np.str))
-                # 只提取印度洋需要修正的67个站点的数据
-                if stationId in indianStationDf['stationID'].values.astype(np.str):
-                    stationDf = stationDf.append([{'stationID': stationId,
-                                                   'LONG': stationLong,
-                                                   'LAT': stationLat,
-                                                   'Date': date,
-                                                   'Hour': hour,
-                                                   'Direction': windDirection,
-                                                   'Speed': windSpeed,
-                                                   'SeaPressure': seaPressure,
-                                                   'StaPressure': staPressure,
-                                                   'P3': p3,
-                                                   'Temp': temp,
-                                                   'DPT': dpt,
-                                                   'Time': obsTime}], ignore_index=True)
-            except Exception as e:
-                print(e)
-            continue
-        stationDf.to_csv(outFileName, index=False, encoding='windows-1252')
+        with open(targetFilePath, encoding='windows-1252') as f:
+            for line in f.readlines():
+                try:
+                    line = ' '.join(line.split())  # change multiple space to one
+                    # 先删除行首空格，再把减号与前一个数据连接的断开，再以空格分割
+                    line = line.lstrip().replace(' -', '-').replace('-', ' -').replace('-888888', 'NaN').split(' ')
+                    stationId = line[0]
+                    stationLong = line[1]
+                    stationLat = line[2]
+                    date = line[3]
+                    hour = line[4]
+                    if int(date) < 10:
+                        date = '0' + date
+                    if int(hour) < 10:
+                        hour = '0' + hour
+                    windDirection = line[8]
+                    windSpeed = line[9]
+                    seaPressure = line[10]
+                    staPressure = line[11]
+                    p3 = line[12]
+                    temp = line[13]
+                    dpt = line[15]
+                    # 这里判断每个月第一天中包含上个月最后一天数据
+                    # 如果文件中读出的日期和文件名中的日期差值大于1，则将月份数据减一
+                    if int(date) - int(targetFilePath.split('_')[-1][6:8]) > 2:
+                        obsTime = targetFilePath.split('_')[-1][0:6]
+                        obsTime = as_str_h(ym(obsTime) - relativedelta(months=1))
+                        obsTime = obsTime[0:6] + date + hour
+                    else:
+                        obsTime = targetFilePath.split('_')[-1][0:6] + date + hour
+                    # print(stationId in indianStationDf['stationID'].values.astype(np.str))
+                    # 只提取印度洋需要修正的67个站点的数据
+                    if stationId in indianStationDf['stationID'].values.astype(np.str):
+                        stationDf = stationDf.append([{'stationID': stationId,
+                                                       'LONG': stationLong,
+                                                       'LAT': stationLat,
+                                                       'Date': date,
+                                                       'Hour': hour,
+                                                       'Direction': windDirection,
+                                                       'Speed': windSpeed,
+                                                       'SeaPressure': seaPressure,
+                                                       'StaPressure': staPressure,
+                                                       'P3': p3,
+                                                       'Temp': temp,
+                                                       'DPT': dpt,
+                                                       'Time': obsTime}], ignore_index=True)
+                except Exception as e:
+                    print(e)
+                continue
+            stationDf.to_csv(outFileName, index=False, encoding='windows-1252')
+    elif int(year) >= 2018:
+        stationDf = pd.DataFrame(
+            columns=['stationID', 'LONG', 'LAT', 'Date', 'Hour', 'Direction', 'Speed', 'SeaPressure', 'StaPressure',
+                     'P3',
+                     'Temp', 'DPT', 'Time'])
+
+        with open(targetFilePath, encoding='windows-1252') as f:
+            for line in f.readlines():
+                try:
+                    line = ' '.join(line.split())  # change multiple space to one
+                    # 先删除行首空格，再把减号与前一个数据连接的断开，再以空格分割
+                    line = line.lstrip().replace(' -', '-').replace('-', ' -').replace('-888888', 'NaN').split(' ')
+                    stationId = line[0]
+                    stationLong = line[3]
+                    stationLat = line[4]
+                    date = line[1]
+                    hour = line[2]
+                    windDirection = line[8]
+                    windSpeed = line[9]
+                    seaPressure = line[10]
+                    staPressure = line[11]
+                    p3 = line[12]
+                    temp = line[13]
+                    dpt = line[15]
+                    obsTime = date + hour
+                    # print(stationId in indianStationDf['stationID'].values.astype(np.str))
+                    # 只提取印度洋需要修正的67个站点的数据
+                    if stationId in indianStationDf['stationID'].values.astype(np.str):
+                        stationDf = stationDf.append([{'stationID': stationId,
+                                                       'LONG': stationLong,
+                                                       'LAT': stationLat,
+                                                       'Date': date,
+                                                       'Hour': hour,
+                                                       'Direction': windDirection,
+                                                       'Speed': windSpeed,
+                                                       'SeaPressure': seaPressure,
+                                                       'StaPressure': staPressure,
+                                                       'P3': p3,
+                                                       'Temp': temp,
+                                                       'DPT': dpt,
+                                                       'Time': obsTime}], ignore_index=True)
+                except Exception as e:
+                    print(e)
+                continue
+            stationDf.to_csv(outFileName, index=False, encoding='windows-1252')
 
 
 def get6hWindInfo(targetFilePath, outFileName):
@@ -127,15 +172,11 @@ def get6hWindData(windSetPath):
                 
 
 if __name__ == "__main__":
-    get6hWindInfo('../../data/wind/GTS.out_20130505_wind.csv', '../../data/wind/GTS.out_20130505_6h_wind.csv')
+    # get6hWindInfo('../../data/wind/GTS.out_20130505_wind.csv', '../../data/wind/GTS.out_20130505_6h_wind.csv')
 
     # 提取当前年份
     # year = time.strftime('%Y', time.localtime(time.time()))
-    # 从GTS结果中提取站点信息（包括台站号和经纬度）
-    from multiprocessing import Pool
-
-    # with Pool(20) as p:
-    for i in range(2013, 2019, 1):
+    for i in range(2013, 2020, 1):
         dataSetPath = GTSPath + '/' + str(i)
         readGTS(dataSetPath, str(i))
         # windSetPath = storePath + str(i)
