@@ -88,22 +88,15 @@ def ann(X_in):
     return model
 
 
-def lstm(lstm_layers, dense_layers):
+def build_lstm():
+    # input_dim是输入的train_x的最后一个维度，train_x的维度为(n_samples, time_steps, input_dim)
     model = Sequential()
+    model.add(LSTM(input_dim=1, output_dim=50, return_sequences=True))
+    print(model.layers)
+    model.add(LSTM(100, return_sequences=False))
+    model.add(Dense(output_dim=1))
+    model.add(Activation('linear'))
 
-    model.add(LSTM(output_dim=32,
-                   input_shape=(2, 3),
-                   activation='relu',
-                   return_sequences=True))
-    for i in range(lstm_layers - 1):
-        model.add(LSTM(output_dim=32 * (i + 1),
-                       activation='relu',
-                       return_sequences=True))
-
-    for i in range(dense_layers - 1):
-        model.add(Dense(output_dim=256,
-                        activation='relu'))
-        model.add(Dropout(0.5))
-    model.compile(loss='mae', optimizer='adam', metrics=['accuracy'])
-    model.summary()
+    model.compile(loss='mse', optimizer='rmsprop')
     return model
+
