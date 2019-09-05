@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingRegressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
@@ -19,8 +19,7 @@ features = ['Direction_x',
             'StaPressure',
             'P3',
             'Temp',
-            'DPT'
-            ]
+            'DPT']
 
 target = ['Direction_y', 'Speed_y']
 
@@ -33,7 +32,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 # X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
 
-def train_lstm(train_x, train_y, test_x, test_y):
+def lstm_train(train_x, train_y, test_x, test_y):
     # paras = list(map(lambda x: x.ravel(),
     #                  np.meshgrid(range(10, 200, 5), range(4, 30, 2))))
     # for lstm_layers, dense_layers in zip(paras[0], paras[1]):
@@ -58,7 +57,7 @@ def randomForest_train(X_train, X_test, y_train, y_test):
     paras = list(map(lambda x: x.ravel(),
                      np.meshgrid(range(10, 200, 5), range(4, 30, 2))))
     for ne, md in zip(paras[0], paras[1]):
-        clf = MultiOutputRegressor(RandomForestClassifier(n_estimators=ne, max_depth=md, random_state=200))
+        clf = MultiOutputRegressor(RandomForestRegressor(n_estimators=ne, max_depth=md, random_state=200))
 
         clf.fit(X_train, y_train)
 
@@ -83,7 +82,43 @@ def randomForest_train(X_train, X_test, y_train, y_test):
 
         print('wrf direction rmse: {0}, wrf speed rmse: {1} '.format(wrf_dir_rmse, wrf_speed_rmse))
         print('prediction direction rmse: {0}, prediction speed rmse: {1}'.format(prediction_dir_rmse, prediction_speed_rmse))
+        print('***********************************************************')
+
+
+def GradientBoosting_train(X_train, X_test, y_train, y_test):
+    nrow = len(X_train)
+    if nrow < 300:
+        exit()
+
+    for ne in range(10, 200, 2):
+        clf = MultiOutputRegressor(GradientBoostingRegressor(n_estimators=ne))
+
+        clf.fit(X_train, y_train)
+
+        y_multirf = clf.predict(X_test)
+
+        # WRF预报的风向和风速
+        y_wrf = np.array([X_test.Direction_x, X_test.Speed_x]).T
+        y_WRF = pd.DataFrame(y_wrf, columns=['direction', 'speed'])
+        # GTS观测风向和风速
+        # y_gts = np.array([y_test.Direction_y, y_test.Speed_y]).T
+        y_GTS = pd.DataFrame(y_test, columns=['direction', 'speed'])
+        # 订正后的风向和风速
+        y_prediction = pd.DataFrame(y_multirf, columns=['direction', 'speed'])
+
+        wrf_dir_rmse = np.sqrt(mean_squared_error(y_WRF.direction, y_GTS.direction))
+        wrf_speed_rmse = np.sqrt(mean_squared_error(y_WRF.speed, y_GTS.speed))
+
+        prediction_dir_rmse = np.sqrt(mean_squared_error(y_prediction.direction, y_GTS.direction))
+        prediction_speed_rmse = np.sqrt(mean_squared_error(y_prediction.speed, y_GTS.speed))
+
+        print('n_estimators(ne): {0}.'.format(ne))
+
+        print('wrf direction rmse: {0}, wrf speed rmse: {1} '.format(wrf_dir_rmse, wrf_speed_rmse))
+        print('prediction direction rmse: {0}, prediction speed rmse: {1}'.format(prediction_dir_rmse, prediction_speed_rmse))
         print('====================================================')
 
+
 randomForest_train(X_train, X_test, y_train, y_test)
-# train_lstm(X_train, X_test, y_train, y_test)
+# GradientBoosting_train(X_train, X_test, y_train, y_test)
+# lstm_train(X_train, X_test, y_train, y_test)

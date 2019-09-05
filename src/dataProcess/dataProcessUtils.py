@@ -111,13 +111,14 @@ def remove_abnormal(gts):
     return gts
 
 
-def dump_wrf_var(wrf_dir, spot, pred):
+# dump wrf data into one (2013-2017 by year)
+def dump_wrf_var(wrf_dir, spot, pred, year):
     spot_str = spot.strftime(ymdh)
     pred_str = pred.strftime(ymdh)
     res = []
     for i in range(0, len(spot_str)):
-        if ymd_h(spot_str[i]) <= ymd_h('2013123112'):
-            ncName = 'pack.pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
+        if spot_str[i][0:4] == year:
+            ncName = '6h.pack.pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
             # file = sorted(glob.glob(wrf_dir + '*pwrfout_d01.' + spot_str[i] + '*.nc'))
             file = wrf_dir + ncName
             print(file)
@@ -125,10 +126,6 @@ def dump_wrf_var(wrf_dir, spot, pred):
                 variable_keys = ds.variables.keys()
                 # print(variable_keys)
                 if 'U10' in variable_keys and 'V10' in variable_keys and 'XLONG' in variable_keys and 'XLAT' in variable_keys:
-                    # print((ymd_h(spot_str[i]) + hours(12)).strftime(ymdh), (ymd_h(pred_str[i]) - hours(2 * 24)).strftime(ymdh))
-                    # print(len(ds['U10'][:].data[0]))    # 299
-                    # print(len(ds['V10'][:].data))       # 133
-                    # print([spot_str[i], pred_str[i], ds['U10'][:].data, ds['V10'][:].data])
                     res.append([(ymd_h(spot_str[i]) + hours(12)).strftime(ymdh),
                                 (ymd_h(pred_str[i]) - hours(2 * 24)).strftime(ymdh),
                                 ds['XLONG'][:].data,
@@ -137,36 +134,37 @@ def dump_wrf_var(wrf_dir, spot, pred):
                                 ds['V10'][:].data])
     return res
 
-    #     filelist.extend(file)
-    # print(filelist)
-    # 三种命名方式的文件，需要分别加入读取列表
-    # filelist = []
-    # filelist.extend(sorted(glob.glob(wrf_dir + '6h.pack.pwrfout_d01.' + str(yy) + '*.nc')))
-    # filelist.extend(sorted(glob.glob(wrf_dir + 'pack.pwrfout_d01.' + str(yy) + '*.nc')))
-    # filelist.extend(sorted(glob.glob(wrf_dir + 'pwrfout_d01.' + str(yy) + '*.nc')))
-    # nt = len(filelist)
-    # files = [wrf_dir + '/' + r'\.' + 'pwrfout_d01.{0}_{1}.nc'.format(x, y)
-    #          for x, y in zip(spot_str, pred_str)]
-    # print(files)
-    # res = []
 
-    # for s, p, f in tqdm(zip(spot, pred, files)):
-    #     print(s + ' ' + p + ' ' + f)
-    #     if not os.path.exists(f):
-    #         print("Warning: {0} does not exists.".format(f))
-    #         continue
-    #     try:
-    #         with Dataset(f) as ds:
-    #             res.append([s, p, ds[var][:].data])
-    #     except:
-    #         print("Warning: error in reading {0} from {1}.".format(var, f))
-    #         continue
-    # return res
+# dump wrf data into one (2018-2019 by month)
+def dump_wrf_var_month(wrf_dir, spot, pred, month, year):
+    spot_str = spot.strftime(ymdh)
+    pred_str = pred.strftime(ymdh)
+    res = []
+    for i in range(0, len(spot_str)):
+        if spot_str[i][0:4] == year and spot_str[i][4:6] == month:
+            if year == '2018':
+                ncName = 'pack.pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
+            else:
+                ncName = 'pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
+            # file = sorted(glob.glob(wrf_dir + '*pwrfout_d01.' + spot_str[i] + '*.nc'))
+            file = wrf_dir + ncName
+            print(file)
+            with nc.Dataset(file, mode='r', format='NETCDF4_CLASSIC') as ds:
+                variable_keys = ds.variables.keys()
+                # print(variable_keys)
+                if 'U10' in variable_keys and 'V10' in variable_keys and 'XLONG' in variable_keys and 'XLAT' in variable_keys:
+                    res.append([(ymd_h(spot_str[i]) + hours(12)).strftime(ymdh),
+                                (ymd_h(pred_str[i]) - hours(2 * 24)).strftime(ymdh),
+                                ds['XLONG'][:].data,
+                                ds['XLAT'][:].data,
+                                ds['U10'][:].data,
+                                ds['V10'][:].data])
+    return res
 
 
-# build mesh (stored in DataFrame) for EC data：为EC数据建立网格
+# build mesh (stored in DataFrame) for EC data
 def build_mesh():
-    ds = nc.Dataset('../../data/wrfout/pwrfout_d01.2019010100_2019010812.nc')
+    ds = nc.Dataset('/home/shared_data/external/IDWRF/202.108.199.14/IDWRF/OUTPUT_P/PACK_IDWRF/pwrfout_d01.2019010100_2019010812.nc')
     lon = ds['XLONG'][:].data
     lat = ds['XLAT'][:].data
     nlon = len(lon[0][0])
