@@ -5,7 +5,7 @@ GTSPath = '/home/shared_data/Wind_WRF/Data1/GTS_OUT'
 
 if __name__ == "__main__":
     for i in range(2013, 2020, 1):
-        # dataSetPath = GTSPath + '/' + str(i)
+        # dataSetPath = GTSPath + '/' + str(i)      # 从GTS数据中提取需要的数据
         # readGTS(dataSetPath, str(i))
         if i < 2018:
             GTS = gatherGTS(i)
@@ -13,4 +13,5 @@ if __name__ == "__main__":
             WRF = meshWRFtoStation(wrf_pred, i)
             dataset = buildDataset(i)
         if i >= 2018:
+
             pass

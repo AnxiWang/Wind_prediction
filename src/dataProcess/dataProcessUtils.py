@@ -79,18 +79,19 @@ def is_valid_date(str):
 def load_gts(gts_dir, gts_times):
     gts_files = ["{0}/GTS.out_{1}_wind.csv".format(gts_dir, as_str(x)) for x in gts_times]
     res = [pd.read_csv(f, index_col=0, encoding='windows-1252') for f in gts_files]
-    total = pd.concat(res)
-    # convert all float64 type to float32
-    for c in total.columns:
-        if total[c].dtype.name == 'float64':
-            total[c] = total[c].astype('float32')
-        if total[c].dtype.name == 'int64':
-            total[c] = total[c].astype('int32')
-    total.reset_index(inplace=True)
-    # total['Time'] = ymd_h(total['Time'])
+    if res:     # 月份观测数据缺失导致res为空列表
+        total = pd.concat(res)
+        # convert all float64 type to float32
+        for c in total.columns:
+            if total[c].dtype.name == 'float64':
+                total[c] = total[c].astype('float32')
+            if total[c].dtype.name == 'int64':
+                total[c] = total[c].astype('int32')
+        total.reset_index(inplace=True)
+        # total['Time'] = ymd_h(total['Time'])
 
-    total['stationID'] = total['stationID'].astype('str')
-    return total
+        total['stationID'] = total['stationID'].astype('str')
+        return total
 
 
 def remove_duplicate_gts(gts):
