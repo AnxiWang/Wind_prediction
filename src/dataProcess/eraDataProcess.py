@@ -3,12 +3,16 @@ import os
 import netCDF4 as nc
 import csv
 import time
+import datetime as dt
 import pandas as pd
 import numpy as np
+import re
+from dataProcessUtils import hours, as_str_h, compute
 
 
 from scipy.interpolate import griddata
 
+t1 = dt.datetime(1900, 1, 1, 0, 0, 0)
 # era_dir = '../../data/2017.nc'
 era_dir = '/home/shared_data/era_4_moment/'
 era_pre_dir = '../../data/era_pre'
@@ -21,7 +25,6 @@ s_lat = station.loc[:].LAT
 
 def read_ERA_to_csv(era_dir, year):
     dataset = nc.Dataset(era_dir, 'r')
-
     # 获取相应数组集合
     lon_set = dataset['longitude'][:].data
     lat_set = dataset['latitude'][:].data
@@ -30,10 +33,7 @@ def read_ERA_to_csv(era_dir, year):
     v10_set = dataset['v10']
     t2m_set = dataset['t2m']
     msl_set = dataset['msl']
-    # file_name = era_dir.split('/')[-1].split('.')[0]
-    # out_name = '../../data/era_pre/' + file_name + '.csv'
-    # era_df = pd.DataFrame(columns=['time', 'long', 'lat', 'u10', 'v10', 'd2m', 't2m', 'msl'])
-    # time_set = time.localtime(float(time_set))
+
     date_df = pd.DataFrame(time_set, columns=['time'])
 
     lon = lon_set[115:526]
@@ -81,17 +81,85 @@ def read_ERA_to_csv(era_dir, year):
     msl.to_csv('../../data/era_pre/msl_' + year + '.csv', index=False, encoding='utf-8')
 
 
-def flatten(csv):
-    u10 = pd.read_csv(csv, encoding='utf-8')
-    u10 = u10.drop(['Unnamed: 0'], axis=1)
-    date_time = u10['time'].values
-    print(date_time)
+def change_time(csv_path, file):
+    date = []
+    csv_target = pd.read_csv(csv_path, encoding='utf-8')
+    # csv_target = csv_target.drop(['Unnamed: 0'], axis=1)
+    date_time = csv_target['time'].values
+    csv_target = csv_target.drop(['time'], axis=1)
+
+    for i in range(len(date_time)):
+        struct_time = as_str_h(t1 + hours(float(date_time[i])))
+        date.append(struct_time)
+    new_date = pd.DataFrame(date, columns=['time'])
+    csv_target = new_date.join(csv_target)
+    csv_target.to_csv('../../data/era_pre/out/new_' + file, index=False, encoding='utf-8')
+
+
+def flatten(path, file):
+    column_name = file.split('_')[1]
+    stationID = []
+    target_df = pd.read_csv(path, index_col=['time'], encoding='utf-8')
+    row_count = target_df.shape[0]
+    columns = list(target_df)
+    for j in range(len(columns)):
+        for i in range(row_count):
+            stationID.append(columns[j])
+    station_ID = pd.DataFrame(stationID, columns=['stationID'])
+    # print(station_ID)
+    df2 = pd.concat(target_df.iloc[:, i] for i in range(target_df.shape[1]))
+    # print(df2)
+    dict_time = {'time': df2.index, column_name: df2.values}
+    df_time = pd.DataFrame(dict_time)
+    new_df = station_ID.join(df_time)
+    new_df.to_csv('../../data/era_pre/out_one/' + file[4:], index=False, encoding='utf-8')
+
+
+def gather_era(path, files, year):
+    year_df = pd.read_csv(path + '/u10_' + year + '.csv', encoding='utf-8')
+
+    for file in files:
+        if file.split('_')[1] == year + '.csv':
+            file_df = pd.read_csv(path + '/' + file, encoding='utf-8')
+            year_df = year_df.merge(file_df)
+    year_df.to_csv('../../data/era_pre/' + year + '.csv', index=False, encoding='utf-8')
+
+
+def compute_era_uv(year, year_file):
+    after_df = pd.DataFrame(columns=['Station_Id', 'Time', 'Direction', 'Speed', 'MSL', 'T2M'])
+    year_df = pd.read_csv(year_file, encoding='utf-8')
+    for index, row in year_df.iterrows():
+        direction, speed = compute(row['u10'], row['v10'])
+        # print(direction, speed)
+        after_df = after_df.append([dict(Station_Id=row.stationID, Time=row.time, Direction=direction, Speed=speed,
+                                         MSL=row.msl, T2M=row.t2m)], ignore_index=True)
+    after_df.to_csv('../../data/era_pre/era_' + year + '.csv', encoding='utf-8')
 
 
 if __name__ == "__main__":
+    # 从nc文件抽取需要的信息
     # for year in range(2013, 2020, 1):
     #     read_ERA_to_csv(era_dir + str(year) + '.nc', str(year))
-    flatten('../../data/output/u10.csv')
+    # 将抽取信息中的时间改为日期显示
+    # files = os.listdir('../../data/era_pre/old')
+    # for file in files:
+    #     print(file)
+    #     change_time('../../data/era_pre/old/' + file, file)
+    # 将要素值展平
+    # files = os.listdir('../../data/era_pre/out')
+    # for file in files:
+    #     # print(file)
+    #     flatten('../../data/era_pre/out/' + file, file)
+    # 合并
+    # for year in range(2013, 2020, 1):
+    #     path = '../../data/era_pre/out_one'
+    #     files = os.listdir(path)
+    #     gather_era(path, files, str(year))
+    # 计算风速和风向
+    for year in range(2013, 2020, 1):
+        path = '../../data/era_pre/'
+        year_file = path + str(year) + '.csv'
+        compute_era_uv(str(year), year_file)
     # conf = configparser.ConfigParser()
     # conf.read(os.getcwd() + '/config/config.ini', encoding="utf-8")
     # analysis_dir = conf.get('data_dirs', 'analysis_dir')
@@ -100,4 +168,3 @@ if __name__ == "__main__":
     # data_from_analysis_to_wrf(analysis_dir, ear_grid_on_wrf, wrf_dir)
     # name = []
     # print(type(name))
-    # read_ERA_to_csv(era_dir)

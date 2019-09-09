@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+from multiprocessing import Pool
+import tqdm
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingRegressor
 from sklearn.multioutput import MultiOutputRegressor
@@ -23,10 +25,10 @@ features = ['Direction_x',
 
 target = ['Direction_y', 'Speed_y']
 
-X = dataset[features]
-y = np.array([dataset.Direction_y, dataset.Speed_y]).T
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+# X = dataset[features]
+# y = np.array([dataset.Direction_y, dataset.Speed_y]).T
+#
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 
 # X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
 # X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
@@ -49,7 +51,10 @@ def lstm_train(train_x, train_y, test_x, test_y):
     return predict, test_y
 
 
-def randomForest_train(X_train, X_test, y_train, y_test):
+def randomForest_train(dataset):
+    X = dataset[features]
+    y = np.array([dataset.Direction_y, dataset.Speed_y]).T
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
     nrow = len(X_train)
     if nrow < 300:
         exit()
@@ -119,6 +124,8 @@ def GradientBoosting_train(X_train, X_test, y_train, y_test):
         print('====================================================')
 
 
-randomForest_train(X_train, X_test, y_train, y_test)
+# with Pool(4) as p:
+#     res = list(tqdm(p.map(randomForest_train, dataset), total=len(dataset)))
+randomForest_train(dataset)
 # GradientBoosting_train(X_train, X_test, y_train, y_test)
 # lstm_train(X_train, X_test, y_train, y_test)
