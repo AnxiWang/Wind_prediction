@@ -7,6 +7,7 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, Grad
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
+import pickle
 
 from model import *
 
@@ -29,7 +30,10 @@ era_feature = ['Direction_wrf',
                'MSL',
                'T2M']
 target = ['Direction_y', 'Speed_y']
+wrf_target = ['Direction_x', 'Speed_x']
 era_target = ['Direction_gts', 'Speed_gts']
+
+# Station_Id,XLONG,XLAT,SpotTime,PredTime,Direction_y,Speed_y
 
 # X = dataset[features]
 # y = np.array([dataset.Direction_y, dataset.Speed_y]).T
@@ -58,16 +62,35 @@ def lstm_train(train_x, train_y, test_x, test_y):
 
 
 def randomForest_train(dataset):
-    X = dataset[features]
-    # X = dataset[era_feature]
-    y = np.array([dataset.Direction_y, dataset.Speed_y]).T
-    # y = np.array([dataset.Direction_gts, dataset.Speed_gts]).T
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+    # X = dataset[features]
+    # # X = dataset[era_feature]
+    # y = np.array([dataset.Direction_y, dataset.Speed_y]).T
+    # # y = np.array([dataset.Direction_gts, dataset.Speed_gts]).T
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+
+    [train, test] = train_test_split(dataset, test_size=0.2, random_state=200)
+    X_train = train[features]
+    X_test = test[features]
+
+    y_train = np.array([train.Direction_y, train.Speed_y]).T
+    y_test = np.array([test.Direction_y, test.Speed_y]).T
 
     nrow = len(X_train)
     if nrow < 300:
         exit()
     P = []
+    d = pd.DataFrame({'Station_Id': test.Station_Id.values,
+                      'XLONG':test.XLONG.values,
+                      'XLAT':test.XLAT.values,
+                      'SpotTime':test.SpotTime.values,
+                      'PredTime':test.PredTime.values})
+    # d = pd.DataFrame([test.Station_Id.values,
+    #                   test.XLONG.values,
+    #                   test.XLAT.values,
+    #                   test.SpotTime.values,
+    #                   test.PredTime.values],
+    #                  columns=['Station_Id', 'XLONG', 'XLAT', 'SpotTime', 'PredTime'])
+
     attempt_classifiers = {}
     attempt_predict_res = {}
     paras = list(map(lambda x: x.ravel(),
@@ -97,15 +120,19 @@ def randomForest_train(dataset):
         y_wrf = np.array([X_test.Direction_x, X_test.Speed_x]).T
         # y_wrf = np.array([X_test.Direction_wrf, X_test.Speed_wrf]).T
         y_WRF = pd.DataFrame(y_wrf, columns=['direction_wrf', 'speed_wrf'])
+        d = d.join(y_WRF)
         # GTS观测风向和风速
         # y_gts = np.array([y_test.Direction_y, y_test.Speed_y]).T
         y_GTS = pd.DataFrame(y_test, columns=['direction_gts', 'speed_gts'])
-        d = y_WRF.join(y_GTS)
+        d = d.join(y_GTS)
         # 订正后的风向和风速
         y_prediction = pd.DataFrame(y_multirf, columns=['direction_new', 'speed_new'])
         d = d.join(y_prediction)
+        d.to_csv('../../data/predict.csv', encoding='utf-8')
 
         wrf_dir_rmse = np.sqrt(mean_squared_error(y_WRF.direction_wrf, y_GTS.direction_gts))
+        print(wrf_dir_rmse)
+        exit()
         wrf_speed_rmse = np.sqrt(mean_squared_error(y_WRF.speed_wrf, y_GTS.speed_gts))
 
         prediction_dir_rmse = np.sqrt(mean_squared_error(y_prediction.direction_new, y_GTS.direction_gts))
@@ -170,7 +197,7 @@ def GradientBoosting_train(X_train, X_test, y_train, y_test):
         print('====================================================')
 
 
-def draw_importance(features,importances):
+def draw_importance(features, importances):
     indices = np.argsort(importances)
     plt.title('Feature Importances')
     plt.barh(range(len(indices)), np.array(importances)[indices], color='b', align='center')
@@ -181,8 +208,17 @@ def draw_importance(features,importances):
 
 if __name__ == "__main__":
     res = randomForest_train(dataset)
-    # print(res)
-    # 加入era数据
-    # randomForest_train(era_dataset)
-    # GradientBoosting_train(X_train, X_test, y_train, y_test)
-    # lstm_train(X_train, X_test, y_train, y_test)
+
+    mse = pd.DataFrame([[i[0], i[3], i[4]] for i in res if i[0] != None],
+                       columns=["Station_Id", "MSE", "MSE(RF)"]).merge(stations, on='Station_Id')
+    mse['pct'] = (mse['MSE'] - mse['MSE(RF)'])
+
+    import datetime
+
+    print("Dumping models ...")
+    model_filename = "model/model-{0}_lead_{1}.pkl" \
+        .format(datetime.datetime.now().strftime("%Y%m%d"), lead)
+
+    sta_models = dict([[i[0], i[1]] for i in res])
+    with open(model_filename, "wb") as of:
+        pickle.dump(sta_models, of)

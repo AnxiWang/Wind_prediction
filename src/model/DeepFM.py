@@ -298,8 +298,8 @@ class DeepFM(BaseEstimator, TransformerMixin):
                     print("[%d] train-accuracy=%.4f, valid-accuracy=%.4f [%.1f s]"
                         % (epoch + 1, train_result, valid_result, time() - t1))
                 else:
-                    print("[%d] train-accuracy=%.4f [%.1f s]"
-                        % (epoch + 1, train_result, time() - t1))
+                    print('[{0}] train-accuracy={1} [{2} s]'.format(epoch + 1, train_result, time() - t1))
+                        # % (epoch + 1, train_result, time() - t1))
             if has_valid and early_stopping and self.training_termination(self.valid_result):
                 break
 
@@ -329,7 +329,7 @@ class DeepFM(BaseEstimator, TransformerMixin):
                     break
 
         # save model
-        self.saver.save(self.sess, "/Users/anxi/Documents/Chebao/Gujia5.0/model/model.ckpt")
+        self.saver.save(self.sess, "../../data/model/model.ckpt")
 
     def training_termination(self, valid_result):
         if len(valid_result) > 5:

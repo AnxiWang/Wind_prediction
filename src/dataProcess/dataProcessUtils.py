@@ -135,6 +135,28 @@ def dump_wrf_var(wrf_dir, spot, pred, year):
     return res
 
 
+# dump pcwrf data into one (2013-2017 by year)
+def dump_pcwrf_var(wrf_dir, spot, pred, year):
+    spot_str = spot.strftime(ymdh)
+    pred_str = pred.strftime(ymdh)
+    res = []
+    for i in range(0, len(spot_str)):
+        if spot_str[i][0:4] == year:
+            ncName = '6h.pack.pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
+            file = wrf_dir + ncName
+            print(file)
+            with nc.Dataset(file, mode='r', format='NETCDF4_CLASSIC') as ds:
+                variable_keys = ds.variables.keys()
+                if 'U10' in variable_keys and 'V10' in variable_keys and 'XLONG' in variable_keys and 'XLAT' in variable_keys:
+                    res.append([(ymd_h(spot_str[i])).strftime(ymdh),
+                                (ymd_h(pred_str[i])).strftime(ymdh),
+                                ds['XLONG'][:].data,
+                                ds['XLAT'][:].data,
+                                ds['U10'][:].data,
+                                ds['V10'][:].data])
+    return res
+
+
 # dump wrf data into one (2018-2019 by month)
 def dump_wrf_var_month(wrf_dir, spot, pred, month, year):
     spot_str = spot.strftime(ymdh)
@@ -161,6 +183,30 @@ def dump_wrf_var_month(wrf_dir, spot, pred, month, year):
                                 ds['V10'][:].data])
     return res
 
+
+# dump pcwrf data into one (2017-2018 by month)
+def dump_pcwrf_var_month(wrf_dir, spot, pred, month, year):
+    spot_str = spot.strftime(ymdh)
+    pred_str = pred.strftime(ymdh)
+    res = []
+    for i in range(0, len(spot_str)):
+        if spot_str[i][0:4] == year and spot_str[i][4:6] == month:
+            # if year == '2017':
+            #     ncName = 'pack.pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
+            # else:
+            ncName = 'pack.pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
+            file = wrf_dir + ncName
+            print(file)
+            with nc.Dataset(file, mode='r', format='NETCDF4_CLASSIC') as ds:
+                variable_keys = ds.variables.keys()
+                if 'U10' in variable_keys and 'V10' in variable_keys and 'XLONG' in variable_keys and 'XLAT' in variable_keys:
+                    res.append([(ymd_h(spot_str[i])).strftime(ymdh),
+                                (ymd_h(pred_str[i])).strftime(ymdh),
+                                ds['XLONG'][:].data,
+                                ds['XLAT'][:].data,
+                                ds['U10'][:].data,
+                                ds['V10'][:].data])
+    return res
 
 # build mesh (stored in DataFrame) for EC data
 def build_mesh():

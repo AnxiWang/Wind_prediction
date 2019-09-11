@@ -23,14 +23,16 @@ m.drawmeridians(meridians, labels=[True, False, False, True])
 
 stationdf = pd.read_csv('../../data/station/station_reduced.csv', encoding='windows-1252')
 citydf = pd.read_csv('../../data/station/city.csv', encoding='utf-8')
-
+print(citydf)
 nearSta = pd.DataFrame(columns=['stationID', 'LONG', 'LAT', 'dist'])
 for index in range(0, citydf.shape[0], 1):
     s_lon = citydf.loc[index].long
     s_lat = citydf.loc[index].lat
     nn = find_nearest_point([s_lon, s_lat], stationdf)
     nearSta = nearSta.append(nn)
-nearSta.to_csv('../../data/station/cityStation.csv', encoding='utf-8')
+nearSta = nearSta[nearSta.stationID != 'SHIP']
+nearSta.drop_duplicates(subset=['stationID', 'LONG', 'LAT'], keep='first', inplace=True)
+nearSta.to_csv('../../data/station/cityStation_drop.csv', encoding='utf-8')
 # 港口城市经纬度信息
 cityLon = citydf['long'].copy()
 cityLat = citydf['lat'].copy()

@@ -62,36 +62,46 @@ def gatherMonthGTS(month, year):
 
 
 # dump WRF data or read the dumped data (2013-2017)
-def dumpWRF(wrf_dir, wrf_times, year):
+def dumpWRF(wrf_dir, wrf_times, out_name, year):
     print('***************Dump or read WRF data***************')
     wrf_pred = []
-    wrf_pred_full_path = wrf_pre_dir + '/wrf_pred_' + str(year) + '_6h.pkl'
+    wrf_pred_full_path = wrf_pre_dir + '/' + out_name + '_pred_' + str(year) + '_6h.pkl'
     if os.path.isfile(wrf_pred_full_path):
         print("Loading wind forecast data...")
         with open(wrf_pred_full_path, 'rb') as of:
             wrf_pred = pickle.load(of)
     else:
         print("Extracting wind forecast data...")
-        wrf_pred = [dump_wrf_var(wrf_dir, wrf_times, wrf_times + hours(7 * 24 + 12), str(year))]
-        with open(wrf_pred_full_path, 'wb') as of:
-            pickle.dump(wrf_pred, of)
+        if out_name == 'wrf':
+            wrf_pred = [dump_wrf_var(wrf_dir, wrf_times, wrf_times + hours(7 * 24 + 12), str(year))]
+            with open(wrf_pred_full_path, 'wb') as of:
+                pickle.dump(wrf_pred, of)
+        elif out_name == 'pcwrf':
+            wrf_pred = [dump_pcwrf_var(wrf_dir, wrf_times, wrf_times + hours(7 * 24 + 12), str(year))]
+            with open(wrf_pred_full_path, 'wb') as of:
+                pickle.dump(wrf_pred, of)
     return wrf_pred
 
 
 # dump WRF data or read the dumped data (2018-2019)
-def dumpMonthWRF(wrf_month_dir, wrf_month_times, month, year):
+def dumpMonthWRF(wrf_month_dir, wrf_month_times, out_name, month, year):
     print('***************Dump or read WRF data***************')
     wrf_pred = []
-    wrf_pred_full_path = wrf_pre_dir + '/wrf_pred_' + str(year) + month + '_1h.pkl'
+    wrf_pred_full_path = wrf_pre_dir + '/' + out_name + '_pred_' + str(year) + month + '_1h.pkl'
     if os.path.isfile(wrf_pred_full_path):
         print("Loading wind forecast data...")
         with open(wrf_pred_full_path, 'rb') as of:
             wrf_pred = pickle.load(of)
     else:
         print("Extracting wind forecast data...")
-        wrf_pred = [dump_wrf_var_month(wrf_month_dir, wrf_month_times, wrf_month_times + hours(7 * 24 + 12), month, str(year))]
-        with open(wrf_pred_full_path, 'wb') as of:
-            pickle.dump(wrf_pred, of)
+        if out_name == 'wrf':
+            wrf_pred = [dump_wrf_var_month(wrf_month_dir, wrf_month_times, wrf_month_times + hours(7 * 24 + 12), month, str(year))]
+            with open(wrf_pred_full_path, 'wb') as of:
+                pickle.dump(wrf_pred, of)
+        elif out_name == 'pcwrf':
+            wrf_pred = [dump_pcwrf_var_month(wrf_month_dir, wrf_month_times, wrf_month_times + hours(7 * 24 + 12), month, str(year))]
+            with open(wrf_pred_full_path, 'wb') as of:
+                pickle.dump(wrf_pred, of)
     return wrf_pred
 
 
