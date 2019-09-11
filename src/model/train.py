@@ -14,16 +14,22 @@ import warnings
 warnings.filterwarnings(action='ignore')
 
 dataset = pd.read_csv('../../data/output/dataset_2013.csv', encoding='utf-8')
+era_dataset = pd.read_csv('../../data/output/wrf_gts_era_2013.csv', encoding='utf-8')
 
-features = ['Direction_x',
-            'Speed_x',
-            'SeaPressure',
-            'StaPressure',
-            'P3',
-            'Temp',
-            'DPT']
-
+features = ['Direction_x', 'Speed_x', 'SeaPressure', 'StaPressure', 'P3', 'Temp', 'DPT']
+era_feature = ['Direction_wrf',
+               'Speed_wrf',
+               'SeaPressure',
+               'StaPressure',
+               'P3',
+               'Temp',
+               'DPT',
+               'Direction_era',
+               'Speed_era',
+               'MSL',
+               'T2M']
 target = ['Direction_y', 'Speed_y']
+era_target = ['Direction_gts', 'Speed_gts']
 
 # X = dataset[features]
 # y = np.array([dataset.Direction_y, dataset.Speed_y]).T
@@ -53,41 +59,84 @@ def lstm_train(train_x, train_y, test_x, test_y):
 
 def randomForest_train(dataset):
     X = dataset[features]
+    # X = dataset[era_feature]
     y = np.array([dataset.Direction_y, dataset.Speed_y]).T
+    # y = np.array([dataset.Direction_gts, dataset.Speed_gts]).T
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+
     nrow = len(X_train)
     if nrow < 300:
         exit()
-
+    P = []
+    attempt_classifiers = {}
+    attempt_predict_res = {}
     paras = list(map(lambda x: x.ravel(),
                      np.meshgrid(range(10, 200, 5), range(4, 30, 2))))
     for ne, md in zip(paras[0], paras[1]):
-        clf = MultiOutputRegressor(RandomForestRegressor(n_estimators=ne, max_depth=md, random_state=200))
-
+        rs = 200
+        clf = MultiOutputRegressor(RandomForestRegressor(n_estimators=ne, max_depth=md, random_state=rs))
         clf.fit(X_train, y_train)
-
         y_multirf = clf.predict(X_test)
+
+        # # 打印特征重要性
+        # importance = clf.estimators_[0].feature_importances_
+        # indices = np.argsort(importance)[::-1]
+        # print("----the importance of features and its importance_score------")
+        # j = 1
+        # features_names = []
+        # im_list = []
+        # for i in indices[0:11]:
+        #     f_name = X_train.columns.values[i]
+        #     print(j, f_name, importance[i])
+        #     features_names.append(X_train.columns.values[i])
+        #     im_list.append(importance[i])
+        #     j += 1
+        # draw_importance(features_names, im_list)
 
         # WRF预报的风向和风速
         y_wrf = np.array([X_test.Direction_x, X_test.Speed_x]).T
-        y_WRF = pd.DataFrame(y_wrf, columns=['direction', 'speed'])
+        # y_wrf = np.array([X_test.Direction_wrf, X_test.Speed_wrf]).T
+        y_WRF = pd.DataFrame(y_wrf, columns=['direction_wrf', 'speed_wrf'])
         # GTS观测风向和风速
         # y_gts = np.array([y_test.Direction_y, y_test.Speed_y]).T
-        y_GTS = pd.DataFrame(y_test, columns=['direction', 'speed'])
+        y_GTS = pd.DataFrame(y_test, columns=['direction_gts', 'speed_gts'])
+        d = y_WRF.join(y_GTS)
         # 订正后的风向和风速
-        y_prediction = pd.DataFrame(y_multirf, columns=['direction', 'speed'])
+        y_prediction = pd.DataFrame(y_multirf, columns=['direction_new', 'speed_new'])
+        d = d.join(y_prediction)
 
-        wrf_dir_rmse = np.sqrt(mean_squared_error(y_WRF.direction, y_GTS.direction))
-        wrf_speed_rmse = np.sqrt(mean_squared_error(y_WRF.speed, y_GTS.speed))
+        wrf_dir_rmse = np.sqrt(mean_squared_error(y_WRF.direction_wrf, y_GTS.direction_gts))
+        wrf_speed_rmse = np.sqrt(mean_squared_error(y_WRF.speed_wrf, y_GTS.speed_gts))
 
-        prediction_dir_rmse = np.sqrt(mean_squared_error(y_prediction.direction, y_GTS.direction))
-        prediction_speed_rmse = np.sqrt(mean_squared_error(y_prediction.speed, y_GTS.speed))
+        prediction_dir_rmse = np.sqrt(mean_squared_error(y_prediction.direction_new, y_GTS.direction_gts))
+        prediction_speed_rmse = np.sqrt(mean_squared_error(y_prediction.speed_new, y_GTS.speed_gts))
+
+        P.append([ne, md, rs, wrf_dir_rmse, wrf_speed_rmse, prediction_dir_rmse, prediction_speed_rmse])
+        attempt_classifiers[ne, md, rs] = clf
+        attempt_predict_res[ne, md, rs] = d
 
         print('n_estimators(ne): {0}, max_depth(md): {1}!'.format(ne, md))
-
         print('wrf direction rmse: {0}, wrf speed rmse: {1} '.format(wrf_dir_rmse, wrf_speed_rmse))
-        print('prediction direction rmse: {0}, prediction speed rmse: {1}'.format(prediction_dir_rmse, prediction_speed_rmse))
+        print('prediction direction rmse: {0}, prediction speed rmse: {1}'.
+              format(prediction_dir_rmse, prediction_speed_rmse))
         print('***********************************************************')
+
+    best = pd.DataFrame(P) \
+        .rename(columns={0: "ne", 1: "md", 2: "rs",
+                         3: "wrf_dir_rmse",
+                         4: "wrf_speed_rmse",
+                         5: "prediction_dir_rmse",
+                         6: "prediction_speed_rmse"}) \
+        .sort_values("prediction_dir_rmse").head(1)
+    bne = best['ne'].iloc[0]
+    bmd = best['md'].iloc[0]
+    brs = best['rs'].iloc[0]
+    return [attempt_classifiers[bne, bmd, brs],
+            attempt_predict_res[bne, bmd, brs],
+            best['wrf_dir_rmse'].iloc[0],
+            best['wrf_speed_rmse'].iloc[0],
+            best['prediction_dir_rmse'].iloc[0],
+            best['prediction_speed_rmse'].iloc[0]]
 
 
 def GradientBoosting_train(X_train, X_test, y_train, y_test):
@@ -97,9 +146,7 @@ def GradientBoosting_train(X_train, X_test, y_train, y_test):
 
     for ne in range(10, 200, 2):
         clf = MultiOutputRegressor(GradientBoostingRegressor(n_estimators=ne))
-
         clf.fit(X_train, y_train)
-
         y_multirf = clf.predict(X_test)
 
         # WRF预报的风向和风速
@@ -118,14 +165,24 @@ def GradientBoosting_train(X_train, X_test, y_train, y_test):
         prediction_speed_rmse = np.sqrt(mean_squared_error(y_prediction.speed, y_GTS.speed))
 
         print('n_estimators(ne): {0}.'.format(ne))
-
         print('wrf direction rmse: {0}, wrf speed rmse: {1} '.format(wrf_dir_rmse, wrf_speed_rmse))
         print('prediction direction rmse: {0}, prediction speed rmse: {1}'.format(prediction_dir_rmse, prediction_speed_rmse))
         print('====================================================')
 
 
-# with Pool(4) as p:
-#     res = list(tqdm(p.map(randomForest_train, dataset), total=len(dataset)))
-randomForest_train(dataset)
-# GradientBoosting_train(X_train, X_test, y_train, y_test)
-# lstm_train(X_train, X_test, y_train, y_test)
+def draw_importance(features,importances):
+    indices = np.argsort(importances)
+    plt.title('Feature Importances')
+    plt.barh(range(len(indices)), np.array(importances)[indices], color='b', align='center')
+    plt.yticks(range(len(indices)), np.array(features)[indices])
+    plt.xlabel('Relative Importance')
+    plt.show()
+
+
+if __name__ == "__main__":
+    res = randomForest_train(dataset)
+    # print(res)
+    # 加入era数据
+    # randomForest_train(era_dataset)
+    # GradientBoosting_train(X_train, X_test, y_train, y_test)
+    # lstm_train(X_train, X_test, y_train, y_test)
