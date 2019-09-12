@@ -1,0 +1,540 @@
+<kml xmlns="http://earth.google.com/kml/2.0">
+<Folder>
+  <Placemark>
+    <description>code = LNDLXGGK<br/>lat = 38.96527778<br/>long = 121.9147222</description>
+    <name>LNDLXGGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>121.9147222,38.96527778</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = LNZHGK<br/>lat = 39.62833333<br/>long = 122.9711111</description>
+    <name>LNZHGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>122.9711111,39.62833333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = LNCXDGK<br/>lat = 39.59055556<br/>long = 121.3769444</description>
+    <name>LNCXDGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>121.3769444,39.59055556</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = LNPKGK<br/>lat = 39.34472222<br/>long = 122.3841667</description>
+    <name>LNPKGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>122.3841667,39.34472222</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = LNLSXGK<br/>lat = 38.80111111<br/>long = 121.1361111</description>
+    <name>LNLSXGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>121.1361111,38.80111111</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = HBJTGK<br/>lat = 39.20805556<br/>long = 118.9972222</description>
+    <name>HBJTGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>118.9972222,39.20805556</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = HBCFDGK<br/>lat = 39.02<br/>long = 118.5</description>
+    <name>HBCFDGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>118.5,39.02</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = HBHHGK<br/>lat = 38.29555556<br/>long = 117.8038889</description>
+    <name>HBHHGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>117.8038889,38.29555556</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = JSLSGK<br/>lat = 32.01583333<br/>long = 121.4033333</description>
+    <name>JSLSGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>121.4033333,32.01583333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = JSSYGK<br/>lat = 33.81055556<br/>long = 120.4916667</description>
+    <name>JSSYGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>120.4916667,33.81055556</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = JSLYGGK<br/>lat = 34.72555556<br/>long = 119.3841667</description>
+    <name>JSLYGGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>119.3841667,34.72555556</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = ZJZPGK<br/>lat = 30.60055556<br/>long = 121.1</description>
+    <name>ZJZPGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>121.1,30.60055556</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = FJFZGK<br/>lat = 25.92638889<br/>long = 119.455</description>
+    <name>FJFZGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>119.455,25.92638889</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = SDWFGK<br/>lat = 37.17111111<br/>long = 119.1936111</description>
+    <name>SDWFGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>119.1936111,37.17111111</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = LNYKGK<br/>lat = 40.29222222<br/>long = 122.1375</description>
+    <name>LNYKGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>122.1375,40.29222222</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = SDQDGK<br/>lat = 36.09666667<br/>long = 120.3275</description>
+    <name>SDQDGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>120.3275,36.09666667</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = LNDLGK<br/>lat = 38.9225<br/>long = 121.6302778</description>
+    <name>LNDLGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>121.6302778,38.9225</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = SDYTGK<br/>lat = 37.53055556<br/>long = 121.3772222</description>
+    <name>SDYTGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>121.3772222,37.53055556</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = SHYSGK<br/>lat = 30.81638889<br/>long = 121.8697222</description>
+    <name>SHYSGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>121.8697222,30.81638889</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = JSYKGK<br/>lat = 32.42194444<br/>long = 121.34</description>
+    <name>JSYKGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>121.34,32.42194444</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = JSDFGK<br/>lat = 33.29555556<br/>long = 120.8025</description>
+    <name>JSDFGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>120.8025,33.29555556</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = ZJNBZSGK<br/>lat = 30.00333333<br/>long = 122.1025</description>
+    <name>ZJNBZSGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>122.1025,30.00333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = ZJZYAGK<br/>lat = 27.89<br/>long = 121.1597222</description>
+    <name>ZJZYAGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>121.1597222,27.89</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = FJQZGK<br/>lat = 24.89361111<br/>long = 118.6888889</description>
+    <name>FJQZGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>118.6888889,24.89361111</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = FJXMGK<br/>lat = 24.46416667<br/>long = 118.0705556</description>
+    <name>FJXMGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>118.0705556,24.46416667</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = GDGZGK<br/>lat = 22.60194444<br/>long = 113.7102778</description>
+    <name>GDGZGK</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>113.7102778,22.60194444</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = LNJZPO<br/>lat = 40.78805556<br/>long = 121.0861111</description>
+    <name>LNJZPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>121.0861111,40.78805556</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = SDDYPO<br/>lat = 38.09138889<br/>long = 118.98</description>
+    <name>SDDYPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>118.98,38.09138889</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = SDLKPO<br/>lat = 37.64555556<br/>long = 120.2855556</description>
+    <name>SDLKPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>120.2855556,37.64555556</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = SDDJKPO<br/>lat = 35.575<br/>long = 119.7916667</description>
+    <name>SDDJKPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>119.7916667,35.575</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = SDRZPO<br/>lat = 35.36222222<br/>long = 119.5791667</description>
+    <name>SDRZPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>119.5791667,35.36222222</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = SDQHDPO<br/>lat = 39.89027778<br/>long = 119.5861111</description>
+    <name>SDQHDPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>119.5861111,39.89027778</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = SDWHPO<br/>lat = 37.45166667<br/>long = 122.2016667</description>
+    <name>SDWHPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>122.2016667,37.45166667</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = SHCMPO<br/>lat = 31.60916667<br/>long = 121.3836111</description>
+    <name>SHCMPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>121.3836111,31.60916667</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = FJSTPO<br/>lat = 23.3475<br/>long = 116.6888889</description>
+    <name>FJSTPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>116.6888889,23.3475</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = GXBHPO<br/>lat = 21.49083333<br/>long = 109.0780556</description>
+    <name>GXBHPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>109.0780556,21.49083333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = HNHKXYPO<br/>lat = 20.04305556<br/>long = 110.2783333</description>
+    <name>HNHKXYPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>110.2783333,20.04305556</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002360<br/>lat = -6.133333333<br/>long = 106.75</description>
+    <name>002360</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>106.75,-6.133333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002560<br/>lat = 1.433333333<br/>long = 125.2</description>
+    <name>002560</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>125.2,1.433333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002480<br/>lat = 3.816666667<br/>long = 103.3</description>
+    <name>002480</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>103.3,3.816666667</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002170<br/>lat = 1.366666667<br/>long = 103.75</description>
+    <name>002170</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>103.75,1.366666667</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002510<br/>lat = 19.43333333<br/>long = 93.56666667</description>
+    <name>002510</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>93.56666667,19.43333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002470<br/>lat = 10.63333333<br/>long = 103.4833333</description>
+    <name>002470</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>103.4833333,10.63333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002460<br/>lat = 25.2<br/>long = 62.19</description>
+    <name>002460</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>62.19,25.2</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002490<br/>lat = 22.36666667<br/>long = 91.8</description>
+    <name>002490</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>91.8,22.36666667</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002500<br/>lat = 21.48333333<br/>long = 91.9</description>
+    <name>002500</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>91.9,21.48333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002540<br/>lat = 6.916666667<br/>long = 79.86666667</description>
+    <name>002540</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>79.86666667,6.916666667</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002530<br/>lat = 6.183333333<br/>long = 81.18333333</description>
+    <name>002530</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>81.18333333,6.183333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002520<br/>lat = 21.05<br/>long = 39.01666667</description>
+    <name>002520</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>39.01666667,21.05</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002440<br/>lat = 17<br/>long = 54.1</description>
+    <name>002440</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>54.1,17</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002450<br/>lat = 31.23333333<br/>long = 32.26666667</description>
+    <name>002450</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>32.26666667,31.23333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = 002550<br/>lat = 12.78333333<br/>long = 44.95</description>
+    <name>002550</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>44.95,12.78333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = ITHBKKPO<br/>lat = 13.08333333<br/>long = 100.4833333</description>
+    <name>ITHBKKPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>100.4833333,13.08333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = IMYPENPO<br/>lat = 5.416666667<br/>long = 100.35</description>
+    <name>IMYPENPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>100.35,5.416666667</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = IVNDANPO<br/>lat = 16.06666667<br/>long = 108.2166667</description>
+    <name>IVNDANPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>108.2166667,16.06666667</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = UPHMANSPO<br/>lat = 14.58333333<br/>long = 120.9666667</description>
+    <name>UPHMANSPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>120.9666667,14.58333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = IPHCEBPO<br/>lat = 10.28333333<br/>long = 123.9</description>
+    <name>IPHCEBPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>123.9,10.28333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = IMMRGNPO<br/>lat = 16.8<br/>long = 96.15</description>
+    <name>IMMRGNPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>96.15,16.8</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = IBNBSBPO<br/>lat = 4.933333333<br/>long = 114.9666667</description>
+    <name>IBNBSBPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>114.9666667,4.933333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = ITPDILPO<br/>lat = -8.583333333<br/>long = 125.5833333</description>
+    <name>ITPDILPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>125.5833333,-8.583333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = IINBOMPO<br/>lat = 18.93333333<br/>long = 72.85</description>
+    <name>IINBOMPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>72.85,18.93333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = IDJDJIPO<br/>lat = 11.6<br/>long = 43.13333333</description>
+    <name>IDJDJIPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>43.13333333,11.6</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = IMVMLIPO<br/>lat = 4.183333333<br/>long = 73.46666667</description>
+    <name>IMVMLIPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>73.46666667,4.183333333</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = IAEABDPO<br/>lat = 24.45<br/>long = 54.38333333</description>
+    <name>IAEABDPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>54.38333333,24.45</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = IIRBUSPO<br/>lat = 29.00888889<br/>long = 50.82361111</description>
+    <name>IIRBUSPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>50.82361111,29.00888889</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = IIQFAOPO<br/>lat = 29.96666667<br/>long = 48.48333333</description>
+    <name>IIQFAOPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>48.48333333,29.96666667</coordinates>
+      </Point>
+  </Placemark>
+  <Placemark>
+    <description>code = IQADOHPO<br/>lat = 25.25<br/>long = 51.56666667</description>
+    <name>IQADOHPO</name>
+      <Point>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>51.56666667,25.25</coordinates>
+      </Point>
+  </Placemark>
+</Folder>
+</kml>
