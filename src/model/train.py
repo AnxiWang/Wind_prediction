@@ -12,6 +12,7 @@ import pickle
 from model import *
 
 import warnings
+
 warnings.filterwarnings(action='ignore')
 
 dataset = pd.read_csv('../../data/output/dataset_2013.csv', encoding='utf-8')
@@ -32,6 +33,7 @@ era_feature = ['Direction_wrf',
 target = ['Direction_y', 'Speed_y']
 wrf_target = ['Direction_x', 'Speed_x']
 era_target = ['Direction_gts', 'Speed_gts']
+
 
 # Station_Id,XLONG,XLAT,SpotTime,PredTime,Direction_y,Speed_y
 
@@ -80,10 +82,10 @@ def randomForest_train(dataset):
         exit()
     P = []
     d = pd.DataFrame({'Station_Id': test.Station_Id.values,
-                      'XLONG':test.XLONG.values,
-                      'XLAT':test.XLAT.values,
-                      'SpotTime':test.SpotTime.values,
-                      'PredTime':test.PredTime.values})
+                      'XLONG': test.XLONG.values,
+                      'XLAT': test.XLAT.values,
+                      'SpotTime': test.SpotTime.values,
+                      'PredTime': test.PredTime.values})
     # d = pd.DataFrame([test.Station_Id.values,
     #                   test.XLONG.values,
     #                   test.XLAT.values,
@@ -94,8 +96,14 @@ def randomForest_train(dataset):
     attempt_classifiers = {}
     attempt_predict_res = {}
     paras = list(map(lambda x: x.ravel(),
-                     np.meshgrid(range(10, 200, 5), range(4, 30, 2))))
+                     np.meshgrid(range(10, 20, 5), range(4, 8, 2))))
     for ne, md in zip(paras[0], paras[1]):
+        dir_wrf_col = 'direction_wrf_' + str(ne) + '_' + str(md)
+        speed_wrf_col = 'speed_wrf_' + str(ne) + '_' + str(md)
+        dir_gts_col = 'direction_gts_' + str(ne) + '_' + str(md)
+        speed_gts_col = 'speed_gts_' + str(ne) + '_' + str(md)
+        dir_new_col = 'direction_new_' + str(ne) + '_' + str(md)
+        speed_new_col = 'speed_new_' + str(ne) + '_' + str(md)
         rs = 200
         clf = MultiOutputRegressor(RandomForestRegressor(n_estimators=ne, max_depth=md, random_state=rs))
         clf.fit(X_train, y_train)
@@ -119,24 +127,21 @@ def randomForest_train(dataset):
         # WRF预报的风向和风速
         y_wrf = np.array([X_test.Direction_x, X_test.Speed_x]).T
         # y_wrf = np.array([X_test.Direction_wrf, X_test.Speed_wrf]).T
-        y_WRF = pd.DataFrame(y_wrf, columns=['direction_wrf', 'speed_wrf'])
+        y_WRF = pd.DataFrame(y_wrf, columns=[dir_wrf_col, speed_wrf_col])
         d = d.join(y_WRF)
         # GTS观测风向和风速
         # y_gts = np.array([y_test.Direction_y, y_test.Speed_y]).T
-        y_GTS = pd.DataFrame(y_test, columns=['direction_gts', 'speed_gts'])
+        y_GTS = pd.DataFrame(y_test, columns=[dir_gts_col, speed_gts_col])
         d = d.join(y_GTS)
         # 订正后的风向和风速
-        y_prediction = pd.DataFrame(y_multirf, columns=['direction_new', 'speed_new'])
+        y_prediction = pd.DataFrame(y_multirf, columns=[dir_new_col, speed_new_col])
         d = d.join(y_prediction)
-        d.to_csv('../../data/predict.csv', encoding='utf-8')
 
-        wrf_dir_rmse = np.sqrt(mean_squared_error(y_WRF.direction_wrf, y_GTS.direction_gts))
-        print(wrf_dir_rmse)
-        exit()
-        wrf_speed_rmse = np.sqrt(mean_squared_error(y_WRF.speed_wrf, y_GTS.speed_gts))
+        wrf_dir_rmse = np.sqrt(mean_squared_error(y_WRF[dir_wrf_col], y_GTS[dir_gts_col]))
+        wrf_speed_rmse = np.sqrt(mean_squared_error(y_WRF[speed_wrf_col], y_GTS[speed_gts_col]))
 
-        prediction_dir_rmse = np.sqrt(mean_squared_error(y_prediction.direction_new, y_GTS.direction_gts))
-        prediction_speed_rmse = np.sqrt(mean_squared_error(y_prediction.speed_new, y_GTS.speed_gts))
+        prediction_dir_rmse = np.sqrt(mean_squared_error(y_prediction[dir_new_col], y_GTS[dir_gts_col]))
+        prediction_speed_rmse = np.sqrt(mean_squared_error(y_prediction[speed_new_col], y_GTS[speed_gts_col]))
 
         P.append([ne, md, rs, wrf_dir_rmse, wrf_speed_rmse, prediction_dir_rmse, prediction_speed_rmse])
         attempt_classifiers[ne, md, rs] = clf
@@ -147,6 +152,7 @@ def randomForest_train(dataset):
         print('prediction direction rmse: {0}, prediction speed rmse: {1}'.
               format(prediction_dir_rmse, prediction_speed_rmse))
         print('***********************************************************')
+    d.to_csv('../../data/predict.csv', encoding='utf-8')
 
     best = pd.DataFrame(P) \
         .rename(columns={0: "ne", 1: "md", 2: "rs",
@@ -193,7 +199,8 @@ def GradientBoosting_train(X_train, X_test, y_train, y_test):
 
         print('n_estimators(ne): {0}.'.format(ne))
         print('wrf direction rmse: {0}, wrf speed rmse: {1} '.format(wrf_dir_rmse, wrf_speed_rmse))
-        print('prediction direction rmse: {0}, prediction speed rmse: {1}'.format(prediction_dir_rmse, prediction_speed_rmse))
+        print('prediction direction rmse: {0}, prediction speed rmse: {1}'.format(prediction_dir_rmse,
+                                                                                  prediction_speed_rmse))
         print('====================================================')
 
 
@@ -209,16 +216,20 @@ def draw_importance(features, importances):
 if __name__ == "__main__":
     res = randomForest_train(dataset)
 
-    mse = pd.DataFrame([[i[0], i[3], i[4]] for i in res if i[0] != None],
-                       columns=["Station_Id", "MSE", "MSE(RF)"]).merge(stations, on='Station_Id')
-    mse['pct'] = (mse['MSE'] - mse['MSE(RF)'])
+    # res = list()
+    #
+    # rmse = pd.DataFrame([[i[2], i[3], i[4], i[5]] for i in list(res)],
+    #                     columns=['wrf_dir_rmse',
+    #                              'wrf_speed_rmse',
+    #                              'prediction_dir_rmse',
+    #                              'prediction_speed_rmse'])
 
     import datetime
 
     print("Dumping models ...")
-    model_filename = "model/model-{0}_lead_{1}.pkl" \
-        .format(datetime.datetime.now().strftime("%Y%m%d"), lead)
+    model_filename = "../../data/model/model-{0}_lead_7.pkl" \
+        .format(datetime.datetime.now().strftime("%Y%m%d"))
 
-    sta_models = dict([[i[0], i[1]] for i in res])
+    # sta_models = dict([i[0] for i in res])
     with open(model_filename, "wb") as of:
-        pickle.dump(sta_models, of)
+        pickle.dump(res[0], of)

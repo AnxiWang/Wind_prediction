@@ -12,8 +12,8 @@ GTSPath = '/home/shared_data/Wind_WRF/Data1/GTS_OUT'
 # stationPathLocal = '../../data/station'
 storePath = '../../data/wind/'
 
-indianStationPath = '../../data/station/IndianStation.csv'
-indianStationDf = pd.read_csv(indianStationPath, encoding='windows-1252')
+station_path = '../../data/station/cityStation_drop.csv'
+indianStationDf = pd.read_csv(station_path, encoding='windows-1252')
 
 
 # 获取GTS文件夹下面的所有满足需求的文件

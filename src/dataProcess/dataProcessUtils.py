@@ -136,24 +136,35 @@ def dump_wrf_var(wrf_dir, spot, pred, year):
 
 
 # dump pcwrf data into one (2013-2017 by year)
-def dump_pcwrf_var(wrf_dir, spot, pred, year):
+def dump_pcwrf_var(near_mesh, wrf_dir, spot, pred, year):
     spot_str = spot.strftime(ymdh)
     pred_str = pred.strftime(ymdh)
     res = []
-    for i in range(0, len(spot_str)):
-        if spot_str[i][0:4] == year:
-            ncName = '6h.pack.pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
-            file = wrf_dir + ncName
-            print(file)
-            with nc.Dataset(file, mode='r', format='NETCDF4_CLASSIC') as ds:
-                variable_keys = ds.variables.keys()
-                if 'U10' in variable_keys and 'V10' in variable_keys and 'XLONG' in variable_keys and 'XLAT' in variable_keys:
-                    res.append([(ymd_h(spot_str[i])).strftime(ymdh),
-                                (ymd_h(pred_str[i])).strftime(ymdh),
-                                ds['XLONG'][:].data,
-                                ds['XLAT'][:].data,
-                                ds['U10'][:].data,
-                                ds['V10'][:].data])
+    for index, var in near_mesh.iterrows():
+        print(var['mesh_lon'], var['mesh_lat'])
+        for i in range(0, len(spot_str)):
+            if spot_str[i][0:4] == year:
+                if int(year) < 2017:
+                    ncName = '6h.pack.pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
+                elif int(year) >= 2017:
+                    ncName = 'pack.pwrfout_d01.' + spot_str[i] + '_' + pred_str[i] + '.nc'
+                file = wrf_dir + ncName
+                print(file)
+                with nc.Dataset(file, mode='r', format='NETCDF4_CLASSIC') as ds:
+                    variable_keys = ds.variables.keys()
+                    if 'U10' in variable_keys and 'V10' in variable_keys and 'XLONG' in variable_keys and 'XLAT' in variable_keys:
+
+                        # print(ds.variables['U10'][:, var['mesh_lat'], var['mesh_lon']])
+                        # # if ds['XLONG'][:].data in near_mesh.mesh_lon and ds['XLAT'][:].data in near_mesh.mesh_lat:
+                        # print(type(ds['XLONG'][:].data))
+                        # print(ds['XLONG'][:].data)
+                        # exit()
+                        res.append([(ymd_h(spot_str[i])).strftime(ymdh),
+                                    (ymd_h(pred_str[i])).strftime(ymdh),
+                                    var['mesh_lat'],
+                                    var['mesh_lon'],
+                                    ds.variables['U10'][:, var['mesh_lat'], var['mesh_lon']],
+                                    ds.variables['V10'][:, var['mesh_lat'], var['mesh_lon']]])
     return res
 
 
@@ -185,7 +196,7 @@ def dump_wrf_var_month(wrf_dir, spot, pred, month, year):
 
 
 # dump pcwrf data into one (2017-2018 by month)
-def dump_pcwrf_var_month(wrf_dir, spot, pred, month, year):
+def dump_pcwrf_var_month(near_mesh, wrf_dir, spot, pred, month, year):
     spot_str = spot.strftime(ymdh)
     pred_str = pred.strftime(ymdh)
     res = []
@@ -208,9 +219,10 @@ def dump_pcwrf_var_month(wrf_dir, spot, pred, month, year):
                                 ds['V10'][:].data])
     return res
 
+
 # build mesh (stored in DataFrame) for EC data
-def build_mesh():
-    ds = nc.Dataset('/home/shared_data/external/IDWRF/202.108.199.14/IDWRF/OUTPUT_P/PACK_IDWRF/pwrfout_d01.2019010100_2019010812.nc')
+def build_mesh(mesh):
+    ds = nc.Dataset(mesh)
     lon = ds['XLONG'][:].data
     lat = ds['XLAT'][:].data
     nlon = len(lon[0][0])
@@ -224,6 +236,23 @@ def build_mesh():
 def find_nearest_point(p, grid):
     grid['dist'] = (grid['lon'] - p[0]) ** 2 + (grid['lat'] - p[1]) ** 2
     return grid.nsmallest(4, columns='dist')
+
+
+def find_mesh_city_station(station, mesh):
+    res = pd.DataFrame()
+    for index in range(0, station.shape[0], 1):
+        s_lon = station.loc[index].LONG
+        s_lat = station.loc[index].LAT
+        nn = find_nearest_point([s_lon, s_lat], mesh)
+        nn = nn.rename(columns={'lon': 'mesh_lon', 'lat': 'mesh_lat'})
+        col_name = nn.columns.tolist()  # 将数据框的列名全部提取出来存放在列表里
+        col_name.insert(1, 'sta_lon')
+        col_name.insert(2, 'sta_lat')
+        nn = nn.reindex(columns=col_name)  # DataFrame.reindex() 对原行/列索引重新构建索引值
+        nn['sta_lon'] = s_lon  # 给city列赋值
+        nn['sta_lat'] = s_lat
+        res = res.append(nn)
+    return res
 
 
 def wrf_mesh_to_station(station, wrf_pred, mesh):
