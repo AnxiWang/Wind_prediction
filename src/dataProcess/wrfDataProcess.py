@@ -3,7 +3,10 @@ import pandas as pd
 import tqdm
 import pickle
 import os
+import warnings
 
+warnings.filterwarnings("ignore")
+from multiprocessing import Pool
 from dataProcessUtils import *
 
 gts_dir = '../../data/wind/'
@@ -65,7 +68,7 @@ def gatherMonthGTS(month, year):
 def dumpWRF(near_mesh, wrf_dir, wrf_times, out_name, year):
     print('***************Dump or read WRF data***************')
     wrf_pred = []
-    wrf_pred_full_path = wrf_pre_dir + '/' + out_name + '_pred_' + str(year) + '_6h.pkl'
+    wrf_pred_full_path = wrf_pre_dir + '/' + out_name + '_pred_' + str(year) + '.pkl'
     if os.path.isfile(wrf_pred_full_path):
         print("Loading wind forecast data...")
         with open(wrf_pred_full_path, 'rb') as of:
@@ -73,7 +76,7 @@ def dumpWRF(near_mesh, wrf_dir, wrf_times, out_name, year):
     else:
         print("Extracting wind forecast data...")
         if out_name == 'wrf':
-            wrf_pred = [dump_wrf_var(wrf_dir, wrf_times, wrf_times + hours(7 * 24 + 12), str(year))]
+            wrf_pred = [dump_wrf_var(near_mesh, wrf_dir, wrf_times, wrf_times + hours(7 * 24 + 12), str(year))]
             with open(wrf_pred_full_path, 'wb') as of:
                 pickle.dump(wrf_pred, of)
         elif out_name == 'pcwrf':
@@ -95,35 +98,52 @@ def dumpMonthWRF(near_mesh, wrf_month_dir, wrf_month_times, out_name, month, yea
     else:
         print("Extracting wind forecast data...")
         if out_name == 'wrf':
-            wrf_pred = [dump_wrf_var_month(wrf_month_dir, wrf_month_times, wrf_month_times + hours(7 * 24 + 12), month, str(year))]
+            wrf_pred = [dump_wrf_var_month(wrf_month_dir, wrf_month_times, wrf_month_times + hours(7 * 24 + 12), month,
+                                           str(year))]
             with open(wrf_pred_full_path, 'wb') as of:
                 pickle.dump(wrf_pred, of)
         elif out_name == 'pcwrf':
-            wrf_pred = [dump_pcwrf_var_month(near_mesh, wrf_month_dir, wrf_month_times, wrf_month_times + hours(7 * 24 + 12), month, str(year))]
+            wrf_pred = [
+                dump_pcwrf_var_month(near_mesh, wrf_month_dir, wrf_month_times, wrf_month_times + hours(7 * 24 + 12),
+                                     month, str(year))]
             with open(wrf_pred_full_path, 'wb') as of:
                 pickle.dump(wrf_pred, of)
     return wrf_pred
 
 
 # interpolate year WRF data to the station and compute wind direction, speed from U,V
-def meshWRFtoStation(wrf_pred, station, mesh, year):
+def meshWRFtoStation(wrf_pred, station, mesh, out_name, year):
     print('***************Handle WRF data***************')
-    sta_wrf_pred_path = '../../data/output/sta_wrf_pred_' + str(year) + '.csv'
-    sta_wrf_pred_from_UV_path = '../../data/output/sta_wrf_pred_DS_' + str(year) + '.csv'
-    if os.path.isfile(sta_wrf_pred_path) and os.path.isfile(sta_wrf_pred_from_UV_path):
-        print('file exists')
-        sta_wrf_pred_from_UV = pd.read_csv(sta_wrf_pred_from_UV_path, encoding='utf-8')
-        return sta_wrf_pred_from_UV
-    else:
-        sta_wrf_pred = wrf_mesh_to_station(station, wrf_pred, mesh)
-        sta_wrf_pred.to_csv(sta_wrf_pred_path, index=False)
-        sta_wrf_pred_from_UV = calculateSpeedFromUV(sta_wrf_pred)
-        sta_wrf_pred_from_UV.to_csv(sta_wrf_pred_from_UV_path, encoding='utf-8')
-        return sta_wrf_pred_from_UV
+    if out_name == 'wrf':
+        sta_wrf_pred_path = '../../data/output_all/sta_wrf_pred_' + str(year) + '.csv'
+        sta_wrf_pred_from_UV_path = '../../data/output_all/sta_wrf_pred_DS_' + str(year) + '.csv'
+        if os.path.isfile(sta_wrf_pred_path) and os.path.isfile(sta_wrf_pred_from_UV_path):
+            print('file exists')
+            sta_wrf_pred_from_UV = pd.read_csv(sta_wrf_pred_from_UV_path, encoding='utf-8')
+            return sta_wrf_pred_from_UV
+        else:
+            sta_wrf_pred = wrf_mesh_to_station(station, wrf_pred, mesh)
+            sta_wrf_pred.to_csv(sta_wrf_pred_path, index=False)
+            sta_wrf_pred_from_UV = calculateSpeedFromUV(sta_wrf_pred)
+            sta_wrf_pred_from_UV.to_csv(sta_wrf_pred_from_UV_path, encoding='utf-8')
+            return sta_wrf_pred_from_UV
+    elif out_name == 'pcwrf':
+        sta_wrf_pred_path = '../../data/output/sta_pcwrf_pred_' + str(year) + '.csv'
+        sta_wrf_pred_from_UV_path = '../../data/output/sta_pcwrf_pred_DS_' + str(year) + '.csv'
+        if os.path.isfile(sta_wrf_pred_path) and os.path.isfile(sta_wrf_pred_from_UV_path):
+            print('file exists')
+            sta_wrf_pred_from_UV = pd.read_csv(sta_wrf_pred_from_UV_path, encoding='utf-8')
+            return sta_wrf_pred_from_UV
+        else:
+            sta_wrf_pred = wrf_mesh_to_station(station, wrf_pred, mesh)
+            sta_wrf_pred.to_csv(sta_wrf_pred_path, index=False)
+            sta_wrf_pred_from_UV = calculateSpeedFromUV(sta_wrf_pred)
+            sta_wrf_pred_from_UV.to_csv(sta_wrf_pred_from_UV_path, encoding='utf-8')
+            return sta_wrf_pred_from_UV
 
 
 # interpolate month WRF data to the station and compute wind direction, speed from U,V
-def meshMonthWRFtoStation(wrf_pred, station, mesh, month, year):
+def meshMonthWRFtoStation(wrf_pred, station, mesh, out_name, month, year):
     print('***************Mesh WRF data***************')
     month_sta_wrf_pred_path = '../../data/output/sta_wrf_pred_' + str(year) + month + '.csv'
     month_sta_wrf_pred_from_UV_path = '../../data/output/sta_wrf_pred_DS_' + str(year) + month + '.csv'
@@ -139,35 +159,74 @@ def meshMonthWRFtoStation(wrf_pred, station, mesh, month, year):
         return month_sta_wrf_pred_from_UV
 
 
-def buildDataset(year):
+def buildDataset(out_name, year):
     print('***************Build year dataset***************')
-    dataset_path = '../../data/output/dataset_' + str(year) + '.csv'
-    if os.path.isfile(dataset_path):
-        print('file exists')
-        dataset = pd.read_csv(dataset_path, encoding='utf-8')
-        return dataset
-    else:
-        WRF = pd.read_csv('../../data/output/sta_wrf_pred_DS_' + str(year) + '.csv', encoding='utf-8')
-        GTS = pd.read_csv('../../data/GTS/GTS_' + str(year) + '_wind.csv', encoding='utf-8')
-        res = WRF.merge(GTS, left_on=['Station_Id', 'PredTime'], right_on=['stationID', 'Time'])
-        dataset = pd.DataFrame(res,
-                               columns=['Station_Id', 'XLONG', 'XLAT', 'SpotTime', 'PredTime',
-                                        'Direction_x', 'Speed_x',
-                                        'SeaPressure', 'StaPressure', 'P3', 'Temp', 'DPT', 'Direction_y', 'Speed_y'])
-        # fill nan
-        dataset.SeaPressure.fillna(dataset.SeaPressure.mean(), inplace=True)
-        dataset.StaPressure.fillna(dataset.StaPressure.mean(), inplace=True)
-        dataset.P3.fillna(dataset.P3.mean(), inplace=True)
-        dataset.Temp.fillna(dataset.Temp.mean(), inplace=True)
-        dataset.DPT.fillna(dataset.DPT.mean(), inplace=True)
-        dataset.fillna(0, inplace=True)
+    if out_name == 'wrf':
+        dataset_path = '../../data/output_all/dataset_' + str(year) + '.csv'
+        if os.path.isfile(dataset_path):
+            print('file exists')
+            dataset = pd.read_csv(dataset_path, encoding='utf-8')
+            return dataset
+        else:
+            WRF = pd.read_csv('../../data/output_all/sta_wrf_pred_DS_' + str(year) + '.csv', encoding='utf-8')
+            GTS = pd.read_csv('../../data/GTS/GTS_' + str(year) + '_wind.csv', encoding='utf-8')
+            res = WRF.merge(GTS, left_on=['Station_Id', 'PredTime'], right_on=['stationID', 'Time'])
+            dataset = pd.DataFrame(res,
+                                   # columns=['Station_Id', 'XLONG', 'XLAT', 'SpotTime', 'PredTime',
+                                   #          'Direction_x', 'Speed_x',
+                                   #       'SeaPressure', 'StaPressure', 'P3', 'Temp', 'DPT', 'Direction_y', 'Speed_y']
+                                   columns=['Station_Id', 'XLONG', 'XLAT', 'SpotTime', 'PredTime', 'Direction_x',
+                                            'Speed_x', 'UU', 'VV', 'Q2', 'T2', 'PSFC', 'QVAPOR', 'QCLOUD', 'HGT',
+                                            'RAINC', 'RAINNC', 'SWDOWN', 'GSW', 'GLW', 'HFX', 'QFX', 'LH', 'TT', 'GHT',
+                                            'RH', 'SLP',
+                                            'SeaPressure', 'StaPressure', 'P3', 'Temp', 'DPT', 'Direction_y', 'Speed_y']
+                                   )
+            # fill nan
+            # dataset.SeaPressure.fillna(dataset.SeaPressure.mean(), inplace=True)
+            # dataset.StaPressure.fillna(dataset.StaPressure.mean(), inplace=True)
+            # dataset.P3.fillna(dataset.P3.mean(), inplace=True)
+            # dataset.Temp.fillna(dataset.Temp.mean(), inplace=True)
+            # dataset.DPT.fillna(dataset.DPT.mean(), inplace=True)
+            dataset.fillna(0, inplace=True)
 
-        # drop outlier data
-        for index, var in dataset.iterrows():
-            if var['Direction_y'] == 0 and var['Speed_y'] == 0:
-                dataset.drop(index, inplace=True)
-        dataset.to_csv(dataset_path, encoding='utf-8')
-        return dataset
+            # drop outlier data
+            dataset = dataset[(dataset['Direction_y'] != 0) & (dataset['Speed_y'] != 0)]
+            dataset['SLP'] = dataset['SLP'] * 100
+            dataset = dataset[dataset['T2'] < 400]
+            # for index, var in dataset.iterrows():
+            #     if var['Direction_y'] == 0 and var['Speed_y'] == 0:
+            #         dataset.drop(index, inplace=True)
+            dataset.to_csv(dataset_path, encoding='utf-8')
+            return dataset
+    elif out_name == 'pcwrf':
+        dataset_path = '../../data/output/pc_dataset_' + str(year) + '.csv'
+        if os.path.isfile(dataset_path):
+            print('file exists')
+            dataset = pd.read_csv(dataset_path, encoding='utf-8')
+            return dataset
+        else:
+            WRF = pd.read_csv('../../data/output/sta_pcwrf_pred_DS_' + str(year) + '.csv', encoding='utf-8')
+            GTS = pd.read_csv('../../data/GTS/GTS_' + str(year) + '_wind.csv', encoding='utf-8')
+            res = WRF.merge(GTS, left_on=['Station_Id', 'PredTime'], right_on=['stationID', 'Time'])
+            dataset = pd.DataFrame(res,
+                                   columns=['Station_Id', 'XLONG', 'XLAT', 'SpotTime', 'PredTime',
+                                            'Direction_x', 'Speed_x',
+                                            'SeaPressure', 'StaPressure', 'P3', 'Temp', 'DPT', 'Direction_y',
+                                            'Speed_y'])
+            # fill nan
+            dataset.SeaPressure.fillna(dataset.SeaPressure.mean(), inplace=True)
+            dataset.StaPressure.fillna(dataset.StaPressure.mean(), inplace=True)
+            dataset.P3.fillna(dataset.P3.mean(), inplace=True)
+            dataset.Temp.fillna(dataset.Temp.mean(), inplace=True)
+            dataset.DPT.fillna(dataset.DPT.mean(), inplace=True)
+            dataset.fillna(0, inplace=True)
+
+            # drop outlier data
+            for index, var in dataset.iterrows():
+                if var['Direction_y'] == 0 and var['Speed_y'] == 0:
+                    dataset.drop(index, inplace=True)
+            dataset.to_csv(dataset_path, encoding='utf-8')
+            return dataset
 
 
 def buildMonthDataset(month, year):

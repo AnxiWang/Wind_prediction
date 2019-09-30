@@ -3,20 +3,17 @@ import numpy as np
 from multiprocessing import Pool
 import tqdm
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 import pickle
 
-from model import *
-
 import warnings
-
 warnings.filterwarnings(action='ignore')
 
-dataset = pd.read_csv('../../data/output/dataset_2013.csv', encoding='utf-8')
-era_dataset = pd.read_csv('../../data/output/wrf_gts_era_2013.csv', encoding='utf-8')
+dataset = pd.read_csv('../../data/output/train.csv', encoding='utf-8')
+# era_dataset = pd.read_csv('../../data/output/wrf_gts_era_2013.csv', encoding='utf-8')
 
 features = ['Direction_x', 'Speed_x', 'SeaPressure', 'StaPressure', 'P3', 'Temp', 'DPT']
 era_feature = ['Direction_wrf',
@@ -46,23 +43,6 @@ era_target = ['Direction_gts', 'Speed_gts']
 # X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
 
-def lstm_train(train_x, train_y, test_x, test_y):
-    # paras = list(map(lambda x: x.ravel(),
-    #                  np.meshgrid(range(10, 200, 5), range(4, 30, 2))))
-    # for lstm_layers, dense_layers in zip(paras[0], paras[1]):
-    model = build_lstm()
-    try:
-        model.fit(train_x, train_y, batch_size=512, nb_epoch=30, validation_split=0.1)
-        predict = model.predict(test_x)
-        predict = np.reshape(predict, (predict.size,))
-    except KeyboardInterrupt:
-        print(predict)
-        print(test_y)
-    print(predict)
-    print(test_y)
-    return predict, test_y
-
-
 def randomForest_train(dataset):
     # X = dataset[features]
     # # X = dataset[era_feature]
@@ -86,17 +66,11 @@ def randomForest_train(dataset):
                       'XLAT': test.XLAT.values,
                       'SpotTime': test.SpotTime.values,
                       'PredTime': test.PredTime.values})
-    # d = pd.DataFrame([test.Station_Id.values,
-    #                   test.XLONG.values,
-    #                   test.XLAT.values,
-    #                   test.SpotTime.values,
-    #                   test.PredTime.values],
-    #                  columns=['Station_Id', 'XLONG', 'XLAT', 'SpotTime', 'PredTime'])
 
     attempt_classifiers = {}
     attempt_predict_res = {}
     paras = list(map(lambda x: x.ravel(),
-                     np.meshgrid(range(10, 20, 5), range(4, 8, 2))))
+                     np.meshgrid(range(10, 200, 10), range(5, 40, 5))))
     for ne, md in zip(paras[0], paras[1]):
         dir_wrf_col = 'direction_wrf_' + str(ne) + '_' + str(md)
         speed_wrf_col = 'speed_wrf_' + str(ne) + '_' + str(md)
@@ -105,7 +79,7 @@ def randomForest_train(dataset):
         dir_new_col = 'direction_new_' + str(ne) + '_' + str(md)
         speed_new_col = 'speed_new_' + str(ne) + '_' + str(md)
         rs = 200
-        clf = MultiOutputRegressor(RandomForestRegressor(n_estimators=ne, max_depth=md, random_state=rs))
+        clf = MultiOutputRegressor(RandomForestRegressor(n_estimators=ne, max_depth=md, random_state=rs), n_jobs=10)
         clf.fit(X_train, y_train)
         y_multirf = clf.predict(X_test)
 
@@ -160,7 +134,7 @@ def randomForest_train(dataset):
                          4: "wrf_speed_rmse",
                          5: "prediction_dir_rmse",
                          6: "prediction_speed_rmse"}) \
-        .sort_values("prediction_dir_rmse").head(1)
+        .sort_values('prediction_dir_rmse').head(1)
     bne = best['ne'].iloc[0]
     bmd = best['md'].iloc[0]
     brs = best['rs'].iloc[0]
@@ -170,38 +144,6 @@ def randomForest_train(dataset):
             best['wrf_speed_rmse'].iloc[0],
             best['prediction_dir_rmse'].iloc[0],
             best['prediction_speed_rmse'].iloc[0]]
-
-
-def GradientBoosting_train(X_train, X_test, y_train, y_test):
-    nrow = len(X_train)
-    if nrow < 300:
-        exit()
-
-    for ne in range(10, 200, 2):
-        clf = MultiOutputRegressor(GradientBoostingRegressor(n_estimators=ne))
-        clf.fit(X_train, y_train)
-        y_multirf = clf.predict(X_test)
-
-        # WRF预报的风向和风速
-        y_wrf = np.array([X_test.Direction_x, X_test.Speed_x]).T
-        y_WRF = pd.DataFrame(y_wrf, columns=['direction', 'speed'])
-        # GTS观测风向和风速
-        # y_gts = np.array([y_test.Direction_y, y_test.Speed_y]).T
-        y_GTS = pd.DataFrame(y_test, columns=['direction', 'speed'])
-        # 订正后的风向和风速
-        y_prediction = pd.DataFrame(y_multirf, columns=['direction', 'speed'])
-
-        wrf_dir_rmse = np.sqrt(mean_squared_error(y_WRF.direction, y_GTS.direction))
-        wrf_speed_rmse = np.sqrt(mean_squared_error(y_WRF.speed, y_GTS.speed))
-
-        prediction_dir_rmse = np.sqrt(mean_squared_error(y_prediction.direction, y_GTS.direction))
-        prediction_speed_rmse = np.sqrt(mean_squared_error(y_prediction.speed, y_GTS.speed))
-
-        print('n_estimators(ne): {0}.'.format(ne))
-        print('wrf direction rmse: {0}, wrf speed rmse: {1} '.format(wrf_dir_rmse, wrf_speed_rmse))
-        print('prediction direction rmse: {0}, prediction speed rmse: {1}'.format(prediction_dir_rmse,
-                                                                                  prediction_speed_rmse))
-        print('====================================================')
 
 
 def draw_importance(features, importances):
@@ -214,15 +156,7 @@ def draw_importance(features, importances):
 
 
 if __name__ == "__main__":
-    res = randomForest_train(dataset)
-
-    # res = list()
-    #
-    # rmse = pd.DataFrame([[i[2], i[3], i[4], i[5]] for i in list(res)],
-    #                     columns=['wrf_dir_rmse',
-    #                              'wrf_speed_rmse',
-    #                              'prediction_dir_rmse',
-    #                              'prediction_speed_rmse'])
+    res_rf = randomForest_train(dataset)
 
     import datetime
 
@@ -230,6 +164,7 @@ if __name__ == "__main__":
     model_filename = "../../data/model/model-{0}_lead_7.pkl" \
         .format(datetime.datetime.now().strftime("%Y%m%d"))
 
-    # sta_models = dict([i[0] for i in res])
     with open(model_filename, "wb") as of:
-        pickle.dump(res[0], of)
+        pickle.dump(res_rf[0], of)
+
+    # res_resnet = resnet_train(dataset)

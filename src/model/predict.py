@@ -1,163 +1,99 @@
 import os
 import sys
+
 sys.path.append('../dataProcess/')
 import pandas as pd
-from netCDF4 import Dataset
-import glob
-import datetime as dt
-import os.path
-import pickle
-import numpy as np
-from dataProcessUtils import ymd, hours, get_wrf_time, as_str_h
-
+import datetime
+from dataProcessUtils import ymd, hours, get_wrf_time, as_str_h, as_str, build_mesh, find_nearest_point, \
+    calculateSpeedFromUV
+from predict_utils import *
 import warnings
+
 warnings.filterwarnings("ignore")
+import configparser
+
+conf = configparser.ConfigParser()
+conf.read('model_config.ini', encoding="utf-8")
+wrf_dir = conf.get('data_dirs', 'test_wrf_dirs')
+station_dir = conf.get('data_dirs', 'station_dir')
+base_gts_dir = conf.get('data_dirs', 'GTSPath')
+gts_pre_dir = conf.get('data_dirs', 'gts_pre_dir')
+output_dir = conf.get('data_dirs', 'output_dir')
+
 ymdh = "%Y%m%d%H"
-wrf_dir = '/home/shared_data/external/IDWRF/202.108.199.14/IDWRF/OUTPUT_P/PACK_IDWRF'
+station = pd.read_csv(station_dir, encoding='utf-8')
+features = ['Direction_x', 'Speed_x', 'SeaPressure', 'StaPressure', 'P3', 'Temp', 'DPT']
 
 
 def do_wind_predict():
-    # conf = configparser.ConfigParser()
-    # conf_path = os.getenv('PREDICT_CONF_DIR')
-    # if not conf_path:
-    #     conf_path = '.'
-    #
-    # conf.read('{0}/config.ini'.format(conf_path), encoding="utf-8")
-    #
-    # ec_dir = conf.get('data_dirs', 'ec_dir')
-    # obs_dir = conf.get('data_dirs', 'obs_dir')
-    # output_dir = conf.get('data_dirs', 'output_pre_dir')
-    #
-    # obs_times = get_obs_time(obs_dir).sort_values()
-    # obs_times = obs_times[obs_times > ymd('20170101')]
-
     # get the latest wrf date
-    start = latest_wrf_date(wrf_dir)
-    end = start + hours(7 * 24 + 12)
-    print(str(start)+" and "+str(end))
+    date_start = latest_wrf_date(wrf_dir)
+    date_end = date_start + hours(7 * 24 + 12)
+    print(as_str(date_start) + " and " + as_str(date_end))
 
     models = load_model()
 
-    wrf_file_path = wrf_dir + '/' + get_wrf_path(start, end)
+    wrf_file_path = wrf_dir + '/' + get_wrf_path(date_start, date_end)
     print(wrf_file_path)
-    # 找到最新的WRF文件，未编写代码：根据wrf的预报截止时间找出所有的GTS数据
-    wrf_pred = get_wrf_var(wrf_file_path, start, end)
-    print(wrf_pred)
-    exit()
+    wrf_pred = get_wrf_var(wrf_file_path, date_start, date_end)
+    # print(wrf_pred)
+    datelist = [as_str(date_start)]
+    while date_start < date_end - hours(12):
+        add_date = date_start + datetime.timedelta(days=1)
+        datelist.append(as_str(add_date))
+    # load_latest_gts(base_gts_dir, datelist)
+    gts_tal = load_gts(gts_pre_dir, datelist)
+    gts_tal.to_csv('../../data/gts.csv')
 
-    GTS = load_latest_gts(gts_dir, gts_times, 100)
+    mesh = build_mesh(wrf_file_path)
 
-    mesh = build_mesh()
-    # print(mesh)
-    logging.info("Mapping mesh data to stations...")
-    sta_tp_pred = tp_mesh_to_station(OBS, tp_pred, mesh)
+    sta_wind_pred = wrf_mesh_to_station(station, wrf_pred, mesh)
+    WRF = calculateSpeedFromUV(sta_wind_pred)
 
-    logging.info("Merging forecast data with observation data...")
+    WRF.to_csv('../../data/wrf_predict.csv')
+    # 重新读取一次是为了解决下面合并会出现类型冲突的问题
+    GTS = pd.read_csv('../../data/gts.csv', encoding='utf-8')
+    WRF = pd.read_csv('../../data/wrf_predict.csv', encoding='utf-8')
+    # 6个小时输出一个
+    for index, var in WRF.iterrows():
+        if int(str(int(var['PredTime']))[8:10]) % 6 != 0:
+            WRF.drop(index, inplace=True)
+    sta_wind_gts_pred = WRF.merge(GTS, left_on=['Station_Id', 'PredTime'], right_on=['stationID', 'Time'])
+    # build prediction dataset
+    predict_dataset_path = '../../data/predict_dataset_' + as_str(date_start) + '-' + as_str(date_end) + '.csv'
+    predict_dataset = pd.DataFrame(sta_wind_gts_pred,
+                                   columns=['Station_Id', 'XLONG', 'XLAT', 'SpotTime', 'PredTime',
+                                            'Direction_x', 'Speed_x',
+                                            'SeaPressure', 'StaPressure', 'P3', 'Temp', 'DPT', 'Direction_y',
+                                            'Speed_y'])
+    # fill nan
+    predict_dataset.SeaPressure.fillna(predict_dataset.SeaPressure.mean(), inplace=True)
+    predict_dataset.StaPressure.fillna(predict_dataset.StaPressure.mean(), inplace=True)
+    predict_dataset.P3.fillna(predict_dataset.P3.mean(), inplace=True)
+    predict_dataset.Temp.fillna(predict_dataset.Temp.mean(), inplace=True)
+    predict_dataset.DPT.fillna(predict_dataset.DPT.mean(), inplace=True)
+    predict_dataset.fillna(0, inplace=True)
 
-    sta_tp_obs_pred = \
-        sta_tp_pred.merge(OBS, \
-                          left_on=["SpotTime", "Station_Id"],
-                          right_on=['Time', 'Station_Id']) \
-            .drop(columns=['Time'])
+    predict_dataset.to_csv(predict_dataset_path, encoding='utf-8')
 
-    if max(sta_tp_obs_pred.count()) < 1:
-        logging.error("No proper data for forecasting.")
-        raise ValueError("No proper data for forecasting.")
+    d = pd.DataFrame({'Station_Id': predict_dataset.Station_Id.values,
+                      'XLONG': predict_dataset.XLONG.values,
+                      'XLAT': predict_dataset.XLAT.values,
+                      'SpotTime': predict_dataset.SpotTime.values,
+                      'PredTime': predict_dataset.PredTime.values,
+                      'dir_wrf': predict_dataset.Direction_x.values,
+                      'speed_wrf': predict_dataset.Speed_x.values,
+                      'dir_gts': predict_dataset.Direction_y.values,
+                      'speed_gts': predict_dataset.Speed_y.values})
 
-    logging.info("Categorising Precipitation...")
-    tp_col = [
-        'Precipitation_24H',
-        'Precipitation_12H',
-        'Precipitation_6H',
-        'Precipitation_3H',
-        'Precipitation_1H',
-        'Precipitation_24H_Target',
-        'PredTP']
-    for c in tp_col:
-        if sta_tp_obs_pred.columns.contains(c):
-            sta_tp_obs_pred[c] = \
-                sta_tp_obs_pred[c] \
-                    .apply(v_category_precipitation).astype('int32')
+    y = models.predict(predict_dataset[features])
 
-    sta_list = sta_tp_obs_pred.Station_Id.unique()
-    logging.info("Spliting data by statoins...")
-    sta_data = [sta_tp_obs_pred[sta_tp_obs_pred.Station_Id == s] for
-                s in tqdm(sta_list)]
+    y_prediction = pd.DataFrame(y, columns=['dir_predict', 'speed_predict'])
+    d = d.join(y_prediction)
 
-    logging.info("Start prediction models...")
-    results = []
-    cnt = 0
-    for i in sta_list:
-        m = None
-        try:
-            m = models[i]
-        except:
-            pass
-        if (m != None):
-            if min(sta_data[cnt][features].count()) < 1:
-                logging.warning("There is no data for station {0}, skipping...".format(i))
-            else:
-                results.append([i, start, end, m.predict(prepare_feature(sta_data[cnt]))])
-        cnt = cnt + 1
-
-    R = pd.DataFrame(results).rename(
-        columns={0: 'Station_Id',
-                 1: 'SpotTime',
-                 2: 'PredTime',
-                 3: 'Precipitation_24H'})
-    R['Precipitation_24H'] = R['Precipitation_24H'].map(lambda x: x[0])
-    SpotTime = R.SpotTime[0]
-    PredTime = R.PredTime[0]
-
-    output_file = "{0}/p_{1}_{2}_TP24H.csv".format(output_dir, as_str(SpotTime), as_str(PredTime))
-    R.to_csv(output_file)
-    logging.info("Saved output to file {0}.".format(output_file))
-
-
-def latest_wrf_date(wrf_dir):
-    """
-    :param wrf_dir: WRF数据存放路径，只获取到文件夹的名称，即日期
-    :return: 最新的WRF数据日期
-    """
-    wrf_times = get_wrf_time(wrf_dir).sort_values()
-    return pd.to_datetime(np.sort(wrf_times)[-1])
-
-
-def get_wrf_path(start, end):
-    return 'pwrfout_d01.{0}_{1}.nc'.format(as_str_h(start), as_str_h(end))
-
-
-# load model
-def load_model():
-    # 根据预测时长读取对应的模型
-    files = glob.glob("../../data/model/*.pkl")
-    dates = [i[23:31] for i in files]
-    latest = max(dates)
-    model_filename = '../../data/model/model-{0}_lead_7.pkl'.format(latest)
-    print(model_filename)
-    with open(model_filename, 'rb') as of:
-        return pickle.load(of)
-
-
-def ymd_h(x):
-    return pd.to_datetime(x, format="%Y%m%d%H")
-
-
-# dump wrf data into one (2013-2017 by year)
-def get_wrf_var(wrf_file_dir, start, end):
-    res = []
-    with Dataset(wrf_file_dir, mode='r', format='NETCDF4_CLASSIC') as ds:
-        variable_keys = ds.variables.keys()
-        # print(variable_keys)
-        if 'U10' in variable_keys and 'V10' in variable_keys and 'XLONG' in variable_keys and 'XLAT' in variable_keys:
-            res.append([ymd_h(start).strftime(ymdh),
-                        (ymd_h(end) - hours(2 * 24)).strftime(ymdh),
-                        ds['XLONG'][:].data,
-                        ds['XLAT'][:].data,
-                        ds['U10'][:].data,
-                        ds['V10'][:].data])
-    return res
-
+    output_file = "{0}/P_{1}_{2}_wind.csv".format(output_dir, as_str(date_start), as_str(date_end))
+    d.drop_duplicates(inplace=True)
+    d.to_csv(output_file)
 
 
 if __name__ == "__main__":

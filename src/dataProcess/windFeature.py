@@ -5,14 +5,11 @@ import re
 import pandas as pd
 from dataProcessUtils import *
 from dateutil.relativedelta import relativedelta
-
-# GTSPath = '../../data/GTS/2015'
+from multiprocessing import Pool
 GTSPath = '/home/shared_data/Wind_WRF/Data1/GTS_OUT'
-# stationPath = '/home/wanganxi/DataProcess/data'
-# stationPathLocal = '../../data/station'
 storePath = '../../data/wind/'
 
-station_path = '../../data/station/cityStation_drop.csv'
+station_path = '../../data/station/sta_43.csv'
 indianStationDf = pd.read_csv(station_path, encoding='windows-1252')
 
 
@@ -33,7 +30,8 @@ def readGTS(dataSetPath, year):
                     targetFilePath = eachYearPath + '/' + target
                     outFileName = outFilePath + '/' + target + '_wind.csv'
                     print(targetFilePath)
-                    getWindInfo(targetFilePath, outFileName, year)
+                    if not os.path.isfile(outFileName):
+                        getWindInfo(targetFilePath, outFileName, year)
 
 
 # 针对每一个GTS文件提取站点风向和风速信息
@@ -110,6 +108,8 @@ def getWindInfo(targetFilePath, outFileName, year):
                     stationLat = line[4]
                     date = line[1]
                     hour = line[2]
+                    if int(hour) < 10:
+                        hour = '0' + hour
                     windDirection = line[8]
                     windSpeed = line[9]
                     seaPressure = line[10]
@@ -171,16 +171,25 @@ def get6hWindData(windSetPath):
                 get6hWindInfo(targetFilePath, outFileName)
                 
 
+# if __name__ == "__main__":
+#
+#     for i in range(2013, 2020, 1):
+#         dataSetPath = GTSPath + '/' + str(i)
+#         readGTS(dataSetPath, str(i))
+
+
+def job1(z):
+    return readGTS(z[0], z[1])
+
+
+# GTS观测数据从2017年12月更换格式
 if __name__ == "__main__":
-    # get6hWindInfo('../../data/wind/GTS.out_20130505_wind.csv', '../../data/wind/GTS.out_20130505_6h_wind.csv')
-
-    # 提取当前年份
-    # year = time.strftime('%Y', time.localtime(time.time()))
+    dataSetPath = []
+    year = []
     for i in range(2013, 2020, 1):
-        dataSetPath = GTSPath + '/' + str(i)
-        readGTS(dataSetPath, str(i))
-        # windSetPath = storePath + str(i)
-    #     get6hWindData('../../wind/GTS.out_20130505_wind.csv')
-    # readGTS(GTSPath)
+        dataSetPath.append(GTSPath + '/' + str(i))
+        year.append(str(i))
 
-
+    param = zip(dataSetPath, year)
+    with Pool(10) as p:
+        p.map(job1, param)
